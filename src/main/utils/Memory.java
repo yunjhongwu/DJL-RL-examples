@@ -1,0 +1,134 @@
+package main.utils;
+
+import java.util.Arrays;
+import java.util.Random;
+
+public final class Memory {
+    private final Random random = new Random();
+    private final int capacity;
+    private final Transition[] memory;
+    private final boolean shuffle;
+
+    private float[] state_prev = null;
+    private int action = -1;
+    private float reward = 0.0F;
+    private boolean mask = false;
+    private int stage = 0;
+    private int head = -1;
+    private int size = 0;
+
+    public Memory(int capacity, boolean shuffle) {
+        this.capacity = capacity;
+        this.memory = new Transition[capacity];
+        this.shuffle = shuffle;
+    }
+
+    public Memory(int capacity) {
+        this(capacity, false);
+    }
+
+    public void seed(int seed) {
+        random.setSeed(seed);
+    }
+
+    public void setState(float[] state) {
+        assertStage(0);
+        if (state_prev != null) {
+
+            add(new Transition(state_prev, state, action, reward, mask));
+        }
+        state_prev = state;
+
+    }
+
+    public void setAction(int action) {
+        assertStage(1);
+        this.action = action;
+    }
+
+    public void setRewardAndMask(float reward, boolean mask) {
+        assertStage(2);
+        this.reward = reward;
+        this.mask = mask;
+
+        if (mask) {
+            add(new Transition(state_prev, null, action, reward, mask));
+            state_prev = null;
+            action = -1;
+        }
+
+    }
+
+    public Transition[] sample(int size) {
+        Transition[] chunk = new Transition[size];
+        for (int i = 0; i < size; i++) {
+            chunk[i] = memory[random.nextInt(size)];
+        }
+
+        return chunk;
+    }
+
+    public Transition get(int index) {
+        if (index < 0 || index >= size) {
+            throw new ArrayIndexOutOfBoundsException("Index out of bound " + index);
+        }
+        return memory[index];
+    }
+
+    public int size() {
+        return size;
+    }
+
+    @Override
+    public String toString() {
+        return Arrays.toString(memory);
+    }
+
+    private void add(Transition transition) {
+        head += 1;
+        if (head >= capacity) {
+            if (shuffle) {
+                shuffleMemory();
+            }
+            head = 0;
+        }
+        memory[head] = transition;
+        if (size < capacity) {
+            size++;
+        }
+    }
+
+    private void assertStage(int i) {
+        if (i != stage) {
+            String info_name;
+            switch (stage) {
+                case 0:
+                    info_name = "State";
+                    break;
+                case 1:
+                    info_name = "Action";
+                    break;
+                case 2:
+                    info_name = "Reward and Mask";
+                    break;
+                default:
+                    info_name = null;
+            }
+            throw new IllegalStateException("Expected information: " + info_name);
+        } else {
+            stage++;
+            if (stage > 2) {
+                stage = 0;
+            }
+        }
+    }
+
+    private void shuffleMemory() {
+        for (int i = size - 1; i > 0; i--) {
+            int j = random.nextInt(i + 1);
+            Transition transition = memory[j];
+            memory[j] = memory[i];
+            memory[i] = transition;
+        }
+    }
+}
