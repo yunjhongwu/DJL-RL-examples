@@ -65,7 +65,6 @@ public class MountainCarVisualizer extends EnvVisualizer {
 
     @Override
     protected void updateState(float[] state) {
-        System.out.println(state[0]);
         car_position = state[0];
     }
 

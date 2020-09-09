@@ -12,9 +12,12 @@ public final class MountainCar extends Environment {
     private static final float GOAL_VELOCITY = 0.0f;
     private static final double FORCE = 0.001;
     private static final double GRAVITY = 0.0025;
+    private static final double MAX_EPISODE_LENGTH = 200;
 
     private final float[] state = new float[] { 0.0f, 0.0f };
     private final MountainCarVisualizer visualizer;
+
+    private int episode_length = 0;
 
     public MountainCar(boolean visual) {
         visualizer = visual ? new MountainCarVisualizer(MIN_POSITION, MAX_POSITION, GOAL_POSITION, 1000) : null;
@@ -28,6 +31,7 @@ public final class MountainCar extends Environment {
 
     public Snapshot reset() {
         state[0] = random.nextFloat() * 0.2f - 0.6f;
+        episode_length = 0;
 
         return new Snapshot(state, -1.0f, false);
     }
@@ -44,7 +48,8 @@ public final class MountainCar extends Environment {
                 state[1] = 0.0f;
             }
         }
-        boolean done = state[0] >= GOAL_POSITION && state[1] >= GOAL_VELOCITY;
+        boolean done = ((state[0] >= GOAL_POSITION && state[1] >= GOAL_VELOCITY)
+                || ++episode_length >= MAX_EPISODE_LENGTH);
 
         return new Snapshot(state, -1, done);
     }
