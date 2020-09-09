@@ -3,6 +3,9 @@ package main.utils;
 import java.util.Arrays;
 import java.util.Random;
 
+import ai.djl.ndarray.NDList;
+import ai.djl.ndarray.NDManager;
+
 public final class Memory {
     private final Random random = new Random();
     private final int capacity;
@@ -59,13 +62,34 @@ public final class Memory {
 
     }
 
-    public Transition[] sample(int size) {
-        Transition[] chunk = new Transition[size];
-        for (int i = 0; i < size; i++) {
+    public Transition[] sample(int sample_size) {
+        Transition[] chunk = new Transition[sample_size];
+        for (int i = 0; i < sample_size; i++) {
             chunk[i] = memory[random.nextInt(size)];
         }
 
         return chunk;
+    }
+
+    public NDList sampleBatch(int sample_size, NDManager manager) {
+        Transition[] transitions = sample(sample_size);
+
+        float[][] states = new float[sample_size][];
+        float[][] next_states = new float[sample_size][];
+        int[] actions = new int[sample_size];
+        float[] rewards = new float[sample_size];
+        boolean[] masks = new boolean[sample_size];
+        for (int i = 0; i < sample_size; i++) {
+            states[i] = transitions[i].getState();
+            float[] next_state = transitions[i].getNextState();
+            next_states[i] = next_state != null ? next_state : new float[states[i].length];
+            actions[i] = transitions[i].getAction();
+            rewards[i] = transitions[i].getReward();
+            masks[i] = transitions[i].isMasked();
+        }
+
+        return new NDList(manager.create(states), manager.create(next_states), manager.create(actions),
+                manager.create(rewards), manager.create(masks));
     }
 
     public Transition get(int index) {
@@ -131,4 +155,5 @@ public final class Memory {
             memory[i] = transition;
         }
     }
+
 }

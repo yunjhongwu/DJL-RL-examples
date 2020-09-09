@@ -19,6 +19,7 @@ import ai.djl.nn.core.Linear;
 import ai.djl.training.GradientCollector;
 import ai.djl.training.ParameterStore;
 import ai.djl.training.initializer.XavierInitializer;
+import ai.djl.training.loss.L2Loss;
 import ai.djl.training.optimizer.Optimizer;
 import ai.djl.training.tracker.Tracker;
 import ai.djl.translate.NoopTranslator;
@@ -27,26 +28,34 @@ import ai.djl.util.Pair;
 import ai.djl.util.PairList;
 import main.utils.Memory;
 import main.utils.MultinomialSampler;
-import main.utils.Transition;
 
-public class A2C extends Agent {
+public class DNQ extends Agent {
     private final NDManager manager = NDManager.newBaseManager();
     private final Random random = new Random(0);
-    private final Memory memory = new Memory(1);
+    private final Memory memory = new Memory(4096, true);
+    private final L2Loss loss_func = new L2Loss();
 
     private final int dim_of_state_space;
     private final int num_of_action;
     private final int hidden_size;
+    private final int batch_size;
+    private final int sync_net_interval;
     private final float gamma;
     private final Optimizer optimizer;
 
-    private Model model;
-    private Predictor<NDList, NDList> predictor;
+    private Model policy_net;
+    private Model target_net;
+    private Predictor<NDList, NDList> policy_predictor;
+    private Predictor<NDList, NDList> target_predictor;
+    private int iteration = 0;
 
-    public A2C(int dim_of_state_space, int num_of_action, int hidden_size, float gamma, float learning_rate) {
+    public DNQ(int dim_of_state_space, int num_of_action, int hidden_size, int batch_size, int sync_net_interval,
+            float gamma, float learning_rate) {
         this.dim_of_state_space = dim_of_state_space;
         this.num_of_action = num_of_action;
         this.hidden_size = hidden_size;
+        this.batch_size = batch_size;
+        this.sync_net_interval = sync_net_interval;
         this.gamma = gamma;
         this.optimizer = Optimizer.adam().optLearningRateTracker(Tracker.fixed(learning_rate)).build();
 
@@ -60,28 +69,17 @@ public class A2C extends Agent {
                 memory.setState(state);
 
                 if (memory.size() > 0) {
-                    Transition transition = memory.get(0);
-                    NDList net_output = predictor.predict(new NDList(submanager.create(transition.getState())));
-
-                    NDArray distribution = net_output.get(0);
-                    NDArray advantage = net_output.get(1).neg().add(transition.getReward());
-
-                    if (!transition.isMasked()) {
-                        NDArray value_next = predictor.predict(new NDList(submanager.create(transition.getNextState())))
-                                .get(1);
-                        advantage = advantage.add(value_next.mul(gamma));
-                    }
-
-                    NDArray log_distribution = distribution.log();
-
-                    NDArray loss_critic = advantage.square();
-                    NDArray loss_actor = log_distribution.get(transition.getAction()).mul(advantage).neg();
-                    NDArray loss = loss_actor.add(loss_critic);
+                    NDList batch = memory.sampleBatch(batch_size, submanager);
+                    NDArray policy = policy_predictor.predict(new NDList(batch.get(0))).singletonOrThrow();
+                    NDArray target = target_predictor.predict(new NDList(batch.get(1))).singletonOrThrow();
+                    NDArray loss = loss_func.evaluate(new NDList(gather(policy, batch.get(2).toIntArray())),
+                            new NDList(target.max(new int[] { 1 }).duplicate().mul(batch.get(4).logicalNot()).mul(gamma)
+                                    .add(batch.get(3))));
 
                     try (GradientCollector collector = Engine.getInstance().newGradientCollector()) {
                         collector.backward(loss);
 
-                        for (Pair<String, Parameter> params : model.getBlock().getParameters()) {
+                        for (Pair<String, Parameter> params : policy_net.getBlock().getParameters()) {
                             NDArray params_arr = params.getValue().getArray();
 
                             optimizer.update(params.getKey(), params_arr, params_arr.getGradient().duplicate());
@@ -89,10 +87,14 @@ public class A2C extends Agent {
 
                     }
                 }
+
+                if (++iteration % sync_net_interval == 0) {
+                    syncNets();
+                }
             }
 
-            NDArray prob = predictor.predict(new NDList(submanager.create(state))).get(0);
-            int action = MultinomialSampler.sample(prob);
+            NDArray prob = policy_predictor.predict(new NDList(submanager.create(state))).singletonOrThrow();
+            int action = MultinomialSampler.sample(prob, random);
 
             if (!isEval()) {
                 memory.setAction(action);
@@ -112,20 +114,37 @@ public class A2C extends Agent {
 
     @Override
     public void reset() {
-        model = policy_net.newModel(dim_of_state_space, hidden_size, num_of_action);
-        predictor = model.newPredictor(new NoopTranslator());
+        policy_net = DNQPolicyNet.newModel(dim_of_state_space, hidden_size, num_of_action);
+        target_net = DNQPolicyNet.newModel(dim_of_state_space, hidden_size, num_of_action);
+        policy_predictor = policy_net.newPredictor(new NoopTranslator());
+        target_predictor = target_net.newPredictor(new NoopTranslator());
+        syncNets();
+    }
+
+    private void syncNets() {
+        for (Pair<String, Parameter> params : policy_net.getBlock().getParameters()) {
+            target_net.getBlock().getParameters().get(params.getKey())
+                    .setArray(params.getValue().getArray().duplicate());
+        }
 
     }
 
+    private NDArray gather(NDArray arr, int[] indexes) {
+        boolean[][] mask = new boolean[(int) arr.size(0)][(int) arr.size(1)];
+        for (int i = 0; i < indexes.length; i++) {
+            mask[i][indexes[i]] = true;
+        }
+
+        return arr.get(arr.getManager().create(mask));
+    }
 }
 
-class policy_net extends AbstractBlock {
+class DNQPolicyNet extends AbstractBlock {
     private static final byte VERSION = 2;
     private static final float LAYERNORM_MOMENTUM = 0.9999f;
     private static final float LAYERNORM_EPSILON = 1e-5f;
     private final Block linear_input;
-    private final Block linear_action;
-    private final Block linear_value;
+    private final Block linear_output;
 
     private final int hidden_size;
     private final int output_size;
@@ -135,13 +154,11 @@ class policy_net extends AbstractBlock {
     private float moving_mean = 0.0f;
     private float moving_var = 1.0f;
 
-    private policy_net(int hidden_size, int output_size) {
+    private DNQPolicyNet(int hidden_size, int output_size) {
         super(VERSION);
 
         this.linear_input = addChildBlock("linear_input", Linear.builder().setUnits(hidden_size).build());
-        this.linear_action = addChildBlock("linear_action", Linear.builder().setUnits(output_size).build());
-        this.linear_value = addChildBlock("linear_value", Linear.builder().setUnits(1).build());
-
+        this.linear_output = addChildBlock("linear_output", Linear.builder().setUnits(output_size).build());
         this.gamma = addParameter(new Parameter("mu", this, ParameterType.GAMMA, true), new Shape(1));
         this.beta = addParameter(new Parameter("sigma", this, ParameterType.BETA, true), new Shape(1));
 
@@ -151,7 +168,7 @@ class policy_net extends AbstractBlock {
 
     public static Model newModel(int input_size, int hidden_size, int output_size) {
         Model model = Model.newInstance("A2C");
-        policy_net net = new policy_net(hidden_size, output_size);
+        DNQPolicyNet net = new DNQPolicyNet(hidden_size, output_size);
         net.initialize(net.getManager(), DataType.FLOAT32, new Shape(input_size));
         model.setBlock(net);
 
@@ -164,25 +181,22 @@ class policy_net extends AbstractBlock {
         NDList hidden = new NDList(
                 Activation.relu(linear_input.forward(parameter_store, inputs, training).singletonOrThrow()));
 
-        NDArray distribution = normalize(linear_action.forward(parameter_store, hidden, training).singletonOrThrow())
+        NDArray distribution = normalize(linear_output.forward(parameter_store, hidden, training).singletonOrThrow())
                 .softmax(1);
 
-        NDArray value = linear_value.forward(parameter_store, hidden, training).singletonOrThrow();
-
-        return new NDList(distribution, value);
+        return new NDList(distribution);
     }
 
     @Override
     public Shape[] getOutputShapes(NDManager manager, Shape[] input_shape) {
-        return new Shape[] { new Shape(output_size), new Shape(1) };
+        return new Shape[] { new Shape(output_size) };
     }
 
     @Override
     public void initializeChildBlocks(NDManager manager, DataType data_type, Shape... input_shapes) {
         setInitializer(new XavierInitializer());
         linear_input.initialize(manager, data_type, input_shapes[0]);
-        linear_action.initialize(manager, data_type, new Shape(hidden_size));
-        linear_value.initialize(manager, data_type, new Shape(hidden_size));
+        linear_output.initialize(manager, data_type, new Shape(hidden_size));
     }
 
     private NDManager getManager() {

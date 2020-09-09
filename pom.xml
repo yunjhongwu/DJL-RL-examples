@@ -19,7 +19,7 @@
 	</build>
 	<properties>
 	    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<djl.version>0.7.0</djl.version>
+		<djl.version>0.8.0-SNAPSHOT</djl.version>
 		<pytorch.version>1.6.0</pytorch.version>
 	</properties>
 	<dependencies>

@@ -3,6 +3,7 @@ package main.utils;
 import java.util.Arrays;
 
 public final class Transition extends Snapshot {
+
     private final float[] state_next;
     private final int action;
 
@@ -32,4 +33,5 @@ public final class Transition extends Snapshot {
 
         return builder.toString();
     }
+
 }
