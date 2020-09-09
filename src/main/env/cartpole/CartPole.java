@@ -6,8 +6,7 @@ import main.env.Environment;
 import main.utils.Snapshot;
 
 /** Exactly the same environment as CartPole-v1 implemented in gym. */
-public final class CartPole implements Environment {
-    private static final String NAME = "CartPole-v0";
+public final class CartPole extends Environment {
     private static final double GRAVITY = 9.8;
     private static final double CART_MASS = 1.0;
     private static final double POLE_MASS = 0.1;
@@ -20,7 +19,7 @@ public final class CartPole implements Environment {
     private static final double THETA_THRESHOLD = 12 * 2 * Math.PI / 360;
 
     private final Random random = new Random();
-    private final float[] state = new float[] { 0.0F, 0.0F, 0.0F, 0.0F };
+    private final float[] state = new float[] { 0.0f, 0.0f, 0.0f, 0.0f };
     private final CartPoleVisualizer visualizer;
 
     private int step_beyond_done = -1;
@@ -29,27 +28,19 @@ public final class CartPole implements Environment {
         visualizer = visual ? new CartPoleVisualizer(LENGTH, X_THRESHOLD, 1000) : null;
     }
 
-    public String name() {
-        return NAME;
-    }
-
-    public void seed(long seed) {
-        random.setSeed(seed);
-    }
-
     public void render() {
         if (visualizer != null) {
-            visualizer.update(state[0], state[2]);
+            visualizer.update(state);
 
         }
     }
 
     public Snapshot reset() {
         for (int i = 0; i < 4; i++) {
-            state[i] = random.nextFloat() * 0.1F - 0.05F;
+            state[i] = random.nextFloat() * 0.1f - 0.05f;
         }
         step_beyond_done = -1;
-        return new Snapshot(state, 0.0F, false);
+        return new Snapshot(state, 0.0f, false);
     }
 
     public Snapshot step(int action) {
@@ -80,4 +71,13 @@ public final class CartPole implements Environment {
         return new Snapshot(state, step_beyond_done == 0 ? 0 : 1, done);
     }
 
+    @Override
+    public int DimOfStateSpace() {
+        return 4;
+    }
+
+    @Override
+    public int NumOfActions() {
+        return 2;
+    }
 }

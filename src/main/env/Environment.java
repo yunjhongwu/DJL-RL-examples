@@ -1,17 +1,24 @@
 package main.env;
 
+import java.util.Random;
+
 import main.utils.Snapshot;
 
-public interface Environment {
+public abstract class Environment {
+    protected final Random random = new Random();
 
-    public void render();
+    public void seed(long seed) {
+        random.setSeed(seed);
+    }
 
-    public Snapshot reset();
+    public abstract void render();
 
-    public void seed(long seed);
+    public abstract Snapshot reset();
 
-    public Snapshot step(int action);
+    public abstract Snapshot step(int action);
 
-    public String name();
+    public abstract int DimOfStateSpace();
+
+    public abstract int NumOfActions();
 
 }
