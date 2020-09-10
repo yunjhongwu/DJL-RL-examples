@@ -14,7 +14,6 @@ import ai.djl.nn.AbstractBlock;
 import ai.djl.nn.Activation;
 import ai.djl.nn.Block;
 import ai.djl.nn.Parameter;
-import ai.djl.nn.ParameterType;
 import ai.djl.nn.core.Linear;
 import ai.djl.training.GradientCollector;
 import ai.djl.training.ParameterStore;
@@ -32,7 +31,7 @@ import main.utils.MultinomialSampler;
 public class DNQ extends Agent {
     private final NDManager manager = NDManager.newBaseManager();
     private final Random random = new Random(0);
-    private final Memory memory = new Memory(4096, true);
+    private final Memory memory = new Memory(1024, true);
     private final L2Loss loss_func = new L2Loss();
 
     private final int dim_of_state_space;
@@ -70,27 +69,27 @@ public class DNQ extends Agent {
 
                 if (memory.size() > 0) {
                     NDList batch = memory.sampleBatch(batch_size, submanager);
+
                     NDArray policy = policy_predictor.predict(new NDList(batch.get(0))).singletonOrThrow();
                     NDArray target = target_predictor.predict(new NDList(batch.get(1))).singletonOrThrow();
                     NDArray loss = loss_func.evaluate(new NDList(gather(policy, batch.get(2).toIntArray())),
                             new NDList(target.max(new int[] { 1 }).duplicate().mul(batch.get(4).logicalNot()).mul(gamma)
-                                    .add(batch.get(3))));
+                                    .add(batch.get(3)).duplicate()));
 
                     try (GradientCollector collector = Engine.getInstance().newGradientCollector()) {
                         collector.backward(loss);
 
                         for (Pair<String, Parameter> params : policy_net.getBlock().getParameters()) {
                             NDArray params_arr = params.getValue().getArray();
-
                             optimizer.update(params.getKey(), params_arr, params_arr.getGradient().duplicate());
                         }
 
                     }
+                    if (++iteration % sync_net_interval == 0) {
+                        syncNets();
+                    }
                 }
 
-                if (++iteration % sync_net_interval == 0) {
-                    syncNets();
-                }
             }
 
             NDArray prob = policy_predictor.predict(new NDList(submanager.create(state))).singletonOrThrow();
@@ -141,26 +140,18 @@ public class DNQ extends Agent {
 
 class DNQPolicyNet extends AbstractBlock {
     private static final byte VERSION = 2;
-    private static final float LAYERNORM_MOMENTUM = 0.9999f;
-    private static final float LAYERNORM_EPSILON = 1e-5f;
     private final Block linear_input;
     private final Block linear_output;
 
     private final int hidden_size;
     private final int output_size;
-    private final Parameter gamma;
-    private final Parameter beta;
     private NDManager manager = NDManager.newBaseManager();
-    private float moving_mean = 0.0f;
-    private float moving_var = 1.0f;
 
     private DNQPolicyNet(int hidden_size, int output_size) {
         super(VERSION);
 
         this.linear_input = addChildBlock("linear_input", Linear.builder().setUnits(hidden_size).build());
         this.linear_output = addChildBlock("linear_output", Linear.builder().setUnits(output_size).build());
-        this.gamma = addParameter(new Parameter("mu", this, ParameterType.GAMMA, true), new Shape(1));
-        this.beta = addParameter(new Parameter("sigma", this, ParameterType.BETA, true), new Shape(1));
 
         this.hidden_size = hidden_size;
         this.output_size = output_size;
@@ -181,8 +172,7 @@ class DNQPolicyNet extends AbstractBlock {
         NDList hidden = new NDList(
                 Activation.relu(linear_input.forward(parameter_store, inputs, training).singletonOrThrow()));
 
-        NDArray distribution = normalize(linear_output.forward(parameter_store, hidden, training).singletonOrThrow())
-                .softmax(1);
+        NDArray distribution = linear_output.forward(parameter_store, hidden, training).singletonOrThrow().softmax(1);
 
         return new NDList(distribution);
     }
@@ -201,15 +191,6 @@ class DNQPolicyNet extends AbstractBlock {
 
     private NDManager getManager() {
         return manager;
-    }
-
-    private NDArray normalize(NDArray arr) {
-        float score_mean = arr.mean().getFloat();
-        moving_mean = moving_mean * LAYERNORM_MOMENTUM + score_mean * (1.0f - LAYERNORM_MOMENTUM);
-        moving_var = moving_var * LAYERNORM_MOMENTUM
-                + arr.sub(score_mean).pow(2).mean().getFloat() * (1.0f - LAYERNORM_MOMENTUM);
-        return arr.sub(moving_mean).div(Math.sqrt(moving_var + LAYERNORM_EPSILON)).mul(gamma.getArray())
-                .add(beta.getArray());
     }
 
 }

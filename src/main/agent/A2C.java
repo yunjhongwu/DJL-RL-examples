@@ -92,7 +92,7 @@ public class A2C extends Agent {
             }
 
             NDArray prob = predictor.predict(new NDList(submanager.create(state))).get(0);
-            int action = MultinomialSampler.sample(prob);
+            int action = MultinomialSampler.sample(prob, random);
 
             if (!isEval()) {
                 memory.setAction(action);
@@ -112,14 +112,14 @@ public class A2C extends Agent {
 
     @Override
     public void reset() {
-        model = policy_net.newModel(dim_of_state_space, hidden_size, num_of_action);
+        model = A2CPolicyNet.newModel(dim_of_state_space, hidden_size, num_of_action);
         predictor = model.newPredictor(new NoopTranslator());
 
     }
 
 }
 
-class policy_net extends AbstractBlock {
+class A2CPolicyNet extends AbstractBlock {
     private static final byte VERSION = 2;
     private static final float LAYERNORM_MOMENTUM = 0.9999f;
     private static final float LAYERNORM_EPSILON = 1e-5f;
@@ -135,7 +135,7 @@ class policy_net extends AbstractBlock {
     private float moving_mean = 0.0f;
     private float moving_var = 1.0f;
 
-    private policy_net(int hidden_size, int output_size) {
+    private A2CPolicyNet(int hidden_size, int output_size) {
         super(VERSION);
 
         this.linear_input = addChildBlock("linear_input", Linear.builder().setUnits(hidden_size).build());
@@ -151,7 +151,7 @@ class policy_net extends AbstractBlock {
 
     public static Model newModel(int input_size, int hidden_size, int output_size) {
         Model model = Model.newInstance("A2C");
-        policy_net net = new policy_net(hidden_size, output_size);
+        A2CPolicyNet net = new A2CPolicyNet(hidden_size, output_size);
         net.initialize(net.getManager(), DataType.FLOAT32, new Shape(input_size));
         model.setBlock(net);
 
