@@ -29,9 +29,11 @@ import main.utils.Memory;
 import main.utils.MultinomialSampler;
 
 public class DNQ extends Agent {
+    private final float MIN_EXPLORE_RATE = 0.05f;
+    private final float DECAY_EXPLORE_RATE = 0.99f;
     private final NDManager manager = NDManager.newBaseManager();
     private final Random random = new Random(0);
-    private final Memory memory = new Memory(1024, true);
+    private final Memory memory = new Memory(4096, true);
     private final L2Loss loss_func = new L2Loss();
 
     private final int dim_of_state_space;
@@ -47,6 +49,7 @@ public class DNQ extends Agent {
     private Predictor<NDList, NDList> policy_predictor;
     private Predictor<NDList, NDList> target_predictor;
     private int iteration = 0;
+    private float exploration = 1.0f;
 
     public DNQ(int dim_of_state_space, int num_of_action, int hidden_size, int batch_size, int sync_net_interval,
             float gamma, float learning_rate) {
@@ -72,10 +75,10 @@ public class DNQ extends Agent {
 
                     NDArray policy = policy_predictor.predict(new NDList(batch.get(0))).singletonOrThrow();
                     NDArray target = target_predictor.predict(new NDList(batch.get(1))).singletonOrThrow();
+
                     NDArray loss = loss_func.evaluate(new NDList(gather(policy, batch.get(2).toIntArray())),
                             new NDList(target.max(new int[] { 1 }).duplicate().mul(batch.get(4).logicalNot()).mul(gamma)
-                                    .add(batch.get(3)).duplicate()));
-
+                                    .add(batch.get(3))));
                     try (GradientCollector collector = Engine.getInstance().newGradientCollector()) {
                         collector.backward(loss);
 
@@ -85,15 +88,18 @@ public class DNQ extends Agent {
                         }
 
                     }
+
                     if (++iteration % sync_net_interval == 0) {
+                        exploration *= DECAY_EXPLORE_RATE;
                         syncNets();
                     }
+
                 }
 
             }
 
-            NDArray prob = policy_predictor.predict(new NDList(submanager.create(state))).singletonOrThrow();
-            int action = MultinomialSampler.sample(prob, random);
+            NDArray score = policy_predictor.predict(new NDList(submanager.create(state))).singletonOrThrow();
+            int action = MultinomialSampler.exploreExploit(score, random, Math.max(MIN_EXPLORE_RATE, exploration));
 
             if (!isEval()) {
                 memory.setAction(action);
@@ -158,7 +164,7 @@ class DNQPolicyNet extends AbstractBlock {
     }
 
     public static Model newModel(int input_size, int hidden_size, int output_size) {
-        Model model = Model.newInstance("A2C");
+        Model model = Model.newInstance("DNQ");
         DNQPolicyNet net = new DNQPolicyNet(hidden_size, output_size);
         net.initialize(net.getManager(), DataType.FLOAT32, new Shape(input_size));
         model.setBlock(net);
@@ -172,9 +178,7 @@ class DNQPolicyNet extends AbstractBlock {
         NDList hidden = new NDList(
                 Activation.relu(linear_input.forward(parameter_store, inputs, training).singletonOrThrow()));
 
-        NDArray distribution = linear_output.forward(parameter_store, hidden, training).singletonOrThrow().softmax(1);
-
-        return new NDList(distribution);
+        return linear_output.forward(parameter_store, hidden, training);
     }
 
     @Override

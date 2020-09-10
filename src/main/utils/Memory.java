@@ -116,6 +116,7 @@ public final class Memory {
             }
             head = 0;
         }
+
         memory[head] = transition;
         if (size < capacity) {
             size++;

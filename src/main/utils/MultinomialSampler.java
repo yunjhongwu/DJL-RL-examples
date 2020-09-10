@@ -7,6 +7,15 @@ import ai.djl.ndarray.NDArray;
 public class MultinomialSampler {
     private static Random RANDOM = new Random();
 
+    public static int exploreExploit(NDArray distribution, Random random, float exploration) {
+        if (random.nextFloat() < exploration) {
+            return random.nextInt((int) distribution.size());
+
+        } else {
+            return (int) distribution.argMax().getLong();
+        }
+    }
+
     public static int sample(NDArray distribution, Random random) {
         int value = 0;
         long size = distribution.size();
