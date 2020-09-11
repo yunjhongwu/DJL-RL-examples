@@ -72,24 +72,11 @@ public final class Memory {
     }
 
     public NDList sampleBatch(int sample_size, NDManager manager) {
-        Transition[] transitions = sample(sample_size);
+        return getBatch(sample(sample_size), manager);
+    }
 
-        float[][] states = new float[sample_size][];
-        float[][] next_states = new float[sample_size][];
-        int[] actions = new int[sample_size];
-        float[] rewards = new float[sample_size];
-        boolean[] masks = new boolean[sample_size];
-        for (int i = 0; i < sample_size; i++) {
-            states[i] = transitions[i].getState();
-            float[] next_state = transitions[i].getNextState();
-            next_states[i] = next_state != null ? next_state : new float[states[i].length];
-            actions[i] = transitions[i].getAction();
-            rewards[i] = transitions[i].getReward();
-            masks[i] = transitions[i].isMasked();
-        }
-
-        return new NDList(manager.create(states), manager.create(next_states), manager.create(actions),
-                manager.create(rewards), manager.create(masks));
+    public NDList getOrderedBatch(NDManager manager) {
+        return getBatch(memory, manager);
     }
 
     public Transition get(int index) {
@@ -157,4 +144,30 @@ public final class Memory {
         }
     }
 
+    private NDList getBatch(Transition[] transitions, NDManager manager) {
+        int batch_size = transitions.length;
+
+        float[][] states = new float[batch_size][];
+        float[][] next_states = new float[batch_size][];
+        int[] actions = new int[batch_size];
+        float[] rewards = new float[batch_size];
+        boolean[] masks = new boolean[batch_size];
+
+        int index = head;
+        for (int i = 0; i < batch_size; i++) {
+            index++;
+            if (index >= batch_size) {
+                index = 0;
+            }
+            states[i] = transitions[index].getState();
+            float[] next_state = transitions[index].getNextState();
+            next_states[i] = next_state != null ? next_state : new float[states[index].length];
+            actions[i] = transitions[index].getAction();
+            rewards[i] = transitions[index].getReward();
+            masks[i] = transitions[index].isMasked();
+        }
+
+        return new NDList(manager.create(states), manager.create(next_states), manager.create(actions),
+                manager.create(rewards), manager.create(masks));
+    }
 }
