@@ -1,6 +1,6 @@
 DJL-RL
 ======
-Examples of reinforcement learning implementations with [DJL](https://djl.ai/) (tested with [PyTorch](https://pytorch.org/) backend). This repository aims to provide standard and simple examples of RL models in Java. 
+Examples of reinforcement learning implementations with [DJL](https://djl.ai/) (tested with [PyTorch](https://pytorch.org/) backend). This repository aims to provide toy examples of RL models in Java. 
 
  - Models:
    - DNQ

@@ -12,18 +12,20 @@ public final class Memory {
     private final Transition[] memory;
     private final boolean shuffle;
 
-    private float[] state_prev = null;
-    private int action = -1;
-    private float reward = 0.0F;
-    private boolean mask = false;
-    private int stage = 0;
-    private int head = -1;
-    private int size = 0;
+    private float[] state_prev;
+    private int action;
+    private float reward;
+    private boolean mask;
+    private int stage;
+    private int head;
+    private int size;
 
     public Memory(int capacity, boolean shuffle) {
         this.capacity = capacity;
         this.memory = new Transition[capacity];
         this.shuffle = shuffle;
+
+        reset();
     }
 
     public Memory(int capacity) {
@@ -88,6 +90,20 @@ public final class Memory {
 
     public int size() {
         return size;
+    }
+
+    public void reset() {
+        state_prev = null;
+        action = -1;
+        reward = 0.0F;
+        mask = false;
+        stage = 0;
+        head = -1;
+        size = 0;
+
+        for (int i = 0; i < memory.length; i++) {
+            memory[i] = null;
+        }
     }
 
     @Override
@@ -170,4 +186,5 @@ public final class Memory {
         return new NDList(manager.create(states), manager.create(next_states), manager.create(actions),
                 manager.create(rewards), manager.create(masks));
     }
+
 }
