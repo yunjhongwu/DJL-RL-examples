@@ -4,8 +4,12 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import main.utils.Memory;
+import main.utils.Transition;
+
 public class DynaQ extends Agent {
-    private final Random random = new Random();
+    private final Random random = new Random(0);
+    private final Memory memory = new Memory(1);
     private final EmpiricalModel env;
     private final int[] index;
     private final float[][] table;
@@ -19,12 +23,6 @@ public class DynaQ extends Agent {
     private final float gamma;
     private final double epsilon;
     private final int num_of_planning_iterations;
-
-    private int cached_state;
-    private int cached_action;
-    private float cached_reward;
-    private boolean last_episode;
-    private boolean initialized;
 
     public DynaQ(double[][] state_ranges, int state_resolution, int num_of_actions, float alpha, float gamma,
             double epsilon, int num_of_planning_iterations) {
@@ -60,28 +58,37 @@ public class DynaQ extends Agent {
 
     @Override
     public int react(float[] state) {
-        int state_value = encodeState(state);
-        if (initialized) {
-            env.update(cached_state, state_value, cached_action, cached_reward, last_episode);
-            updateTable(cached_state, state_value, cached_action, cached_reward, last_episode);
+        if (!isEval()) {
+            memory.setState(state);
+            if (memory.size() > 0) {
+                Transition transition = memory.get(0);
+                int state_value = encodeState(transition.getState());
+                int state_next = encodeState(transition.getNextState());
+                env.update(state_value, state_next, transition.getAction(), transition.getReward(),
+                        transition.isMasked());
+                updateTable(state_value, state_next, transition.getAction(), transition.getReward(),
+                        transition.isMasked());
+            }
         }
 
-        this.cached_state = state_value;
-        this.cached_action = (random.nextDouble() < epsilon || !initialized ? random.nextInt(num_of_actions)
-                : getRandomMaxPolicy(state_value));
+        int action = (random.nextDouble() < epsilon || memory.size() > 0 ? random.nextInt(num_of_actions)
+                : getRandomMaxPolicy(encodeState(state)));
 
-        if (initialized) {
-            planning();
+        if (!isEval()) {
+            memory.setAction(action);
+            if (memory.size() > 0) {
+                planning();
+            }
         }
-        initialized = true;
 
-        return cached_action;
+        return action;
     }
 
     @Override
     public void collect(float reward, boolean done) {
-        this.cached_reward = reward;
-        this.last_episode = done;
+        if (!isEval()) {
+            memory.setRewardAndMask(reward, done);
+        }
     }
 
     @Override
@@ -90,7 +97,7 @@ public class DynaQ extends Agent {
             Arrays.fill(table[i], 0);
         }
         env.reset();
-        initialized = false;
+        memory.reset();
     }
 
     private void planning() {
