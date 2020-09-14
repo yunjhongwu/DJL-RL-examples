@@ -5,6 +5,7 @@ import main.utils.Snapshot;
 
 /** Exactly the same environment as MountainCar-v0 implemented in gym. */
 public final class MountainCar extends Environment {
+    private static final double[][] STATE_SPACE = new double[][] { { -1.2, 0.6 }, { -0.07, 0.07 } };
     private static final float MIN_POSITION = -1.2f;
     private static final float MAX_POSITION = 0.6f;
     private static final float MAX_SPEED = 0.1f;
@@ -64,4 +65,11 @@ public final class MountainCar extends Environment {
         return 3;
     }
 
+    @Override
+    public double[] getStateSpace(int dim) {
+        if (dim < 0 || dim >= STATE_SPACE.length) {
+            throw new IllegalArgumentException("Dimension is between 0 and " + DimOfStateSpace());
+        }
+        return STATE_SPACE[dim].clone();
+    }
 }

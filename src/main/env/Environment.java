@@ -21,4 +21,6 @@ public abstract class Environment {
 
     public abstract int NumOfActions();
 
+    public abstract double[] getStateSpace(int dim);
+
 }

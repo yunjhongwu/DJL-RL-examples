@@ -71,7 +71,7 @@ public class DynaQ extends Agent {
             }
         }
 
-        int action = (random.nextDouble() < epsilon || memory.size() > 0 ? random.nextInt(num_of_actions)
+        int action = (random.nextDouble() < epsilon || memory.size() == 0 ? random.nextInt(num_of_actions)
                 : getRandomMaxPolicy(encodeState(state)));
 
         if (!isEval()) {
@@ -119,21 +119,25 @@ public class DynaQ extends Agent {
     }
 
     private int encodeState(float[] state) {
-        int state_value = 0;
-        for (int i = 0; i < state.length; i++) {
-            state_value *= state_resolution;
-            int value = (int) (state_resolution * (state[i] - state_ranges[i][0])
-                    / (state_ranges[i][1] - state_ranges[i][0]));
-            if (value >= state_resolution) {
-                value = state_resolution - 1;
+        if (state == null) {
+            return num_of_states;
+        } else {
+            int state_value = 0;
+            for (int i = 0; i < state.length; i++) {
+                state_value *= state_resolution;
+                int value = (int) (state_resolution * (state[i] - state_ranges[i][0])
+                        / (state_ranges[i][1] - state_ranges[i][0]));
+                if (value >= state_resolution) {
+                    value = state_resolution - 1;
+                }
+                if (value < 0) {
+                    value = 0;
+                }
+                state_value += value;
             }
-            if (value < 0) {
-                value = 0;
-            }
-            state_value += value;
-        }
 
-        return state_value;
+            return state_value;
+        }
     }
 
     private int getRandomMaxPolicy(int state) {

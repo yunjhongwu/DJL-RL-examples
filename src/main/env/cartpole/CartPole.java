@@ -7,6 +7,9 @@ import main.utils.Snapshot;
 
 /** Exactly the same environment as CartPole-v1 implemented in gym. */
 public final class CartPole extends Environment {
+    private static final double[][] STATE_SPACE = new double[][] { { -4.8, 4.8 },
+            { -Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY }, { -0.418, 0.418 },
+            { -Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY } };
     private static final double GRAVITY = 9.8;
     private static final double CART_MASS = 1.0;
     private static final double POLE_MASS = 0.1;
@@ -79,5 +82,13 @@ public final class CartPole extends Environment {
     @Override
     public int NumOfActions() {
         return 2;
+    }
+
+    @Override
+    public double[] getStateSpace(int dim) {
+        if (dim < 0 || dim >= STATE_SPACE.length) {
+            throw new IllegalArgumentException("Dimension is between 0 and " + DimOfStateSpace());
+        }
+        return STATE_SPACE[dim].clone();
     }
 }
