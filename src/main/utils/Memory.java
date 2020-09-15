@@ -7,7 +7,7 @@ import ai.djl.ndarray.NDList;
 import ai.djl.ndarray.NDManager;
 
 public final class Memory {
-    private final Random random = new Random();
+    private final Random random;
     private final int capacity;
     private final Transition[] memory;
     private final boolean shuffle;
@@ -21,9 +21,14 @@ public final class Memory {
     private int size;
 
     public Memory(int capacity, boolean shuffle) {
+        this(capacity, shuffle, 0);
+    }
+
+    public Memory(int capacity, boolean shuffle, int seed) {
         this.capacity = capacity;
         this.memory = new Transition[capacity];
         this.shuffle = shuffle;
+        this.random = new Random(seed);
 
         reset();
     }
@@ -32,14 +37,9 @@ public final class Memory {
         this(capacity, false);
     }
 
-    public void seed(int seed) {
-        random.setSeed(seed);
-    }
-
     public void setState(float[] state) {
         assertStage(0);
         if (state_prev != null) {
-
             add(new Transition(state_prev, state, action, reward, mask));
         }
         state_prev = state;
@@ -155,6 +155,7 @@ public final class Memory {
         for (int i = size - 1; i > 0; i--) {
             int j = random.nextInt(i + 1);
             Transition transition = memory[j];
+
             memory[j] = memory[i];
             memory[i] = transition;
         }
@@ -177,7 +178,7 @@ public final class Memory {
             }
             states[i] = transitions[index].getState();
             float[] next_state = transitions[index].getNextState();
-            next_states[i] = next_state != null ? next_state : new float[states[index].length];
+            next_states[i] = next_state != null ? next_state : new float[states[i].length];
             actions[i] = transitions[index].getAction();
             rewards[i] = transitions[index].getReward();
             masks[i] = transitions[index].isMasked();

@@ -21,6 +21,7 @@ public final class MountainCar extends Environment {
     private int episode_length = 0;
 
     public MountainCar(boolean visual) {
+        super(STATE_SPACE);
         visualizer = visual ? new MountainCarVisualizer(MIN_POSITION, MAX_POSITION, GOAL_POSITION, 1000) : null;
     }
 
@@ -65,11 +66,4 @@ public final class MountainCar extends Environment {
         return 3;
     }
 
-    @Override
-    public double[] getStateSpace(int dim) {
-        if (dim < 0 || dim >= STATE_SPACE.length) {
-            throw new IllegalArgumentException("Dimension is between 0 and " + DimOfStateSpace());
-        }
-        return STATE_SPACE[dim].clone();
-    }
 }

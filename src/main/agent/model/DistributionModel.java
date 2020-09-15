@@ -14,7 +14,7 @@ public class DistributionModel extends ScoreModel {
     }
 
     public static Model newModel(NDManager manager, int input_size, int hidden_size, int output_size) {
-        Model model = Model.newInstance("DNQ");
+        Model model = Model.newInstance("DistributionModel");
         AgentModelBlock net = new DistributionModel(manager, hidden_size, output_size);
         net.initialize(net.getManager(), DataType.FLOAT32, new Shape(input_size));
         model.setBlock(net);

@@ -7,7 +7,7 @@ public class Runner {
     private final Agent agent;
     private final Environment env;
 
-    public Runner(Agent agent, Environment env, boolean visual) {
+    public Runner(Agent agent, Environment env) {
         this.agent = agent;
         this.env = env;
     }

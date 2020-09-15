@@ -25,7 +25,7 @@ public class DynaQ extends Agent {
     private final int num_of_planning_iterations;
 
     public DynaQ(double[][] state_ranges, int state_resolution, int num_of_actions, float alpha, float gamma,
-            double epsilon, int num_of_planning_iterations) {
+            float epsilon, int num_of_planning_iterations) {
         int num_of_states = 1;
 
         this.state_ranges = new double[state_ranges.length][];
@@ -125,8 +125,14 @@ public class DynaQ extends Agent {
             int state_value = 0;
             for (int i = 0; i < state.length; i++) {
                 state_value *= state_resolution;
-                int value = (int) (state_resolution * (state[i] - state_ranges[i][0])
-                        / (state_ranges[i][1] - state_ranges[i][0]));
+                double score;
+                if (state_ranges[i][0] == Double.NEGATIVE_INFINITY || state_ranges[i][1] == Double.POSITIVE_INFINITY) {
+                    score = (state[i] - Math.atan(state_ranges[i][0]))
+                            / (Math.atan(state_ranges[i][1]) - Math.atan(state_ranges[i][0]));
+                } else {
+                    score = (state[i] - state_ranges[i][0]) / (state_ranges[i][1] - state_ranges[i][0]);
+                }
+                int value = (int) (state_resolution * score);
                 if (value >= state_resolution) {
                     value = state_resolution - 1;
                 }

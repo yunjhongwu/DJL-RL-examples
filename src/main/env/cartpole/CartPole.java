@@ -1,15 +1,13 @@
 package main.env.cartpole;
 
-import java.util.Random;
-
 import main.env.Environment;
 import main.utils.Snapshot;
 
 /** Exactly the same environment as CartPole-v1 implemented in gym. */
 public final class CartPole extends Environment {
     private static final double[][] STATE_SPACE = new double[][] { { -4.8, 4.8 },
-            { -Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY }, { -0.418, 0.418 },
-            { -Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY } };
+            { Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY }, { -0.418, 0.418 },
+            { Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY } };
     private static final double GRAVITY = 9.8;
     private static final double CART_MASS = 1.0;
     private static final double POLE_MASS = 0.1;
@@ -21,13 +19,13 @@ public final class CartPole extends Environment {
     private static final double X_THRESHOLD = 2.4;
     private static final double THETA_THRESHOLD = 12 * 2 * Math.PI / 360;
 
-    private final Random random = new Random();
     private final float[] state = new float[] { 0.0f, 0.0f, 0.0f, 0.0f };
     private final CartPoleVisualizer visualizer;
 
     private int step_beyond_done = -1;
 
     public CartPole(boolean visual) {
+        super(STATE_SPACE);
         visualizer = visual ? new CartPoleVisualizer(LENGTH, X_THRESHOLD, 1000) : null;
     }
 
@@ -84,11 +82,4 @@ public final class CartPole extends Environment {
         return 2;
     }
 
-    @Override
-    public double[] getStateSpace(int dim) {
-        if (dim < 0 || dim >= STATE_SPACE.length) {
-            throw new IllegalArgumentException("Dimension is between 0 and " + DimOfStateSpace());
-        }
-        return STATE_SPACE[dim].clone();
-    }
 }

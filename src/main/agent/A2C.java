@@ -16,8 +16,8 @@ import ai.djl.translate.NoopTranslator;
 import ai.djl.translate.TranslateException;
 import ai.djl.util.Pair;
 import main.agent.model.DistributionValueModel;
+import main.utils.ActionSampler;
 import main.utils.Memory;
-import main.utils.MultinomialSampler;
 import main.utils.Transition;
 
 public class A2C extends Agent {
@@ -57,7 +57,7 @@ public class A2C extends Agent {
             }
 
             NDArray prob = predictor.predict(new NDList(submanager.create(state))).get(0);
-            int action = MultinomialSampler.sample(prob, random);
+            int action = ActionSampler.sampleMultinomial(prob, random);
 
             if (!isEval()) {
                 memory.setAction(action);
@@ -79,6 +79,9 @@ public class A2C extends Agent {
 
     @Override
     public void reset() {
+        if (manager != null) {
+            manager.close();
+        }
         manager = NDManager.newBaseManager();
         model = DistributionValueModel.newModel(manager, dim_of_state_space, hidden_size, num_of_action);
         predictor = model.newPredictor(new NoopTranslator());

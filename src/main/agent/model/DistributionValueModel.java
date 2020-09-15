@@ -43,7 +43,7 @@ public class DistributionValueModel extends AgentModelBlock {
     }
 
     public static Model newModel(NDManager manager, int input_size, int hidden_size, int output_size) {
-        Model model = Model.newInstance("A2C");
+        Model model = Model.newInstance("DistributionValueModel");
         AgentModelBlock net = new DistributionValueModel(manager, hidden_size, output_size);
         net.initialize(net.getManager(), DataType.FLOAT32, new Shape(input_size));
         model.setBlock(net);

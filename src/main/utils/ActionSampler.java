@@ -4,19 +4,22 @@ import java.util.Random;
 
 import ai.djl.ndarray.NDArray;
 
-public class MultinomialSampler {
-    private static Random RANDOM = new Random();
+public class ActionSampler {
 
-    public static int exploreExploit(NDArray distribution, Random random, float exploration) {
-        if (random.nextFloat() < exploration) {
+    public static int epsilonGreedy(NDArray distribution, Random random, float epsilon) {
+        if (random.nextFloat() < epsilon) {
             return random.nextInt((int) distribution.size());
 
         } else {
-            return (int) distribution.argMax().getLong();
+            return greedy(distribution);
         }
     }
 
-    public static int sample(NDArray distribution, Random random) {
+    public static int greedy(NDArray distribution) {
+        return (int) distribution.argMax().getLong();
+    }
+
+    public static int sampleMultinomial(NDArray distribution, Random random) {
         int value = 0;
         long size = distribution.size();
         float rnd = random.nextFloat();
@@ -31,9 +34,5 @@ public class MultinomialSampler {
         }
 
         throw new IllegalArgumentException("Invalid multinomial distribution");
-    }
-
-    public static int sample(NDArray distribution) {
-        return sample(distribution, RANDOM);
     }
 }
