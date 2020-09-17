@@ -1,4 +1,4 @@
-package main.utils;
+package main.utils.datatype;
 
 import java.util.Arrays;
 

@@ -2,6 +2,7 @@ package main.utils;
 
 import main.agent.Agent;
 import main.env.Environment;
+import main.utils.datatype.Snapshot;
 
 public class Runner {
     private final Agent agent;
@@ -14,12 +15,10 @@ public class Runner {
 
     public void run(double goal) {
         double score = Double.NEGATIVE_INFINITY;
-        int epoch = 0;
-
-        env.seed(0);
+        int episode = 0;
 
         while (score < goal) {
-            epoch++;
+            episode++;
             Snapshot snapshot = env.reset();
             boolean done = false;
             int episode_score = 0;
@@ -30,11 +29,10 @@ public class Runner {
                 done = snapshot.isMasked();
                 episode_score += snapshot.getReward();
                 agent.collect(snapshot.getReward(), done);
+
             }
-
             score = score > Double.NEGATIVE_INFINITY ? score * 0.95 + episode_score * 0.05 : episode_score;
-
-            System.out.printf("Epoch %d (%d): %.2f\n", epoch, episode_score, score);
+            System.out.printf("Epoch %d (%d): %.2f\n", episode, episode_score, score);
 
         }
 

@@ -1,7 +1,7 @@
 package main.env.cartpole;
 
 import main.env.Environment;
-import main.utils.Snapshot;
+import main.utils.datatype.Snapshot;
 
 /** Exactly the same environment as CartPole-v1 implemented in gym. */
 public final class CartPole extends Environment {
@@ -22,8 +22,6 @@ public final class CartPole extends Environment {
     private final float[] state = new float[] { 0.0f, 0.0f, 0.0f, 0.0f };
     private final CartPoleVisualizer visualizer;
 
-    private int step_beyond_done = -1;
-
     public CartPole(boolean visual) {
         super(STATE_SPACE);
         visualizer = visual ? new CartPoleVisualizer(LENGTH, X_THRESHOLD, 1000) : null;
@@ -40,8 +38,7 @@ public final class CartPole extends Environment {
         for (int i = 0; i < 4; i++) {
             state[i] = random.nextFloat() * 0.1f - 0.05f;
         }
-        step_beyond_done = -1;
-        return new Snapshot(state, 0.0f, false);
+        return new Snapshot(state, 1.0f, false);
     }
 
     public Snapshot step(int action) {
@@ -65,11 +62,8 @@ public final class CartPole extends Environment {
         state[3] += TAU * theta_acc;
         boolean done = (state[0] < -X_THRESHOLD || state[0] > X_THRESHOLD || state[2] < -THETA_THRESHOLD
                 || state[2] > THETA_THRESHOLD);
-        if (done) {
-            step_beyond_done++;
-        }
 
-        return new Snapshot(state, step_beyond_done == 0 ? 0 : 1, done);
+        return new Snapshot(state, 1.0f, done);
     }
 
     @Override

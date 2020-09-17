@@ -5,6 +5,8 @@ import java.util.Random;
 
 import ai.djl.ndarray.NDList;
 import ai.djl.ndarray.NDManager;
+import main.utils.datatype.Batch;
+import main.utils.datatype.Transition;
 
 public final class Memory {
     private final Random random;
@@ -73,7 +75,7 @@ public final class Memory {
         return chunk;
     }
 
-    public NDList sampleBatch(int sample_size, NDManager manager) {
+    public Batch sampleBatch(int sample_size, NDManager manager) {
         return getBatch(sample(sample_size), manager);
     }
 
@@ -161,7 +163,7 @@ public final class Memory {
         }
     }
 
-    private NDList getBatch(Transition[] transitions, NDManager manager) {
+    private Batch getBatch(Transition[] transitions, NDManager manager) {
         int batch_size = transitions.length;
 
         float[][] states = new float[batch_size][];
@@ -184,7 +186,7 @@ public final class Memory {
             masks[i] = transitions[index].isMasked();
         }
 
-        return new NDList(manager.create(states), manager.create(next_states), manager.create(actions),
+        return new Batch(manager.create(states), manager.create(next_states), manager.create(actions),
                 manager.create(rewards), manager.create(masks));
     }
 

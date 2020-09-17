@@ -1,7 +1,7 @@
 package main.env.mountaincar;
 
 import main.env.Environment;
-import main.utils.Snapshot;
+import main.utils.datatype.Snapshot;
 
 /** Exactly the same environment as MountainCar-v0 implemented in gym. */
 public final class MountainCar extends Environment {

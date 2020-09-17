@@ -13,7 +13,7 @@ public class Main {
         Engine.getInstance().setRandomSeed(0);
         Environment env = new CartPole(false);
         env.seed(0);
-        runA2C(env, 500);
+        runDQN(env, 500);
     }
 
     public static void runDynaQ(Environment env, int goal) {
@@ -28,8 +28,4 @@ public class Main {
         new Runner(new A2C(env.DimOfStateSpace(), env.NumOfActions(), 64, 0.95f, 0.001f), env).run(goal);
     }
 
-    public static void runQRDQM(Environment env, int goal) {
-        // new Runner(new QRDQN(env.DimOfStateSpace(), env.NumOfActions(), 16, 64, 256,
-        // 8, 0.95f, 0.001f), env).run(goal);
-    }
 }

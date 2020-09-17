@@ -19,9 +19,10 @@ import ai.djl.util.Pair;
 import main.agent.model.ScoreModel;
 import main.utils.ActionSampler;
 import main.utils.Memory;
+import main.utils.datatype.Batch;
 
 public class DQN extends Agent {
-    protected final float MIN_EXPLORE_RATE = 0.1f;
+    protected final float MIN_EXPLORE_RATE = 0.05f;
     protected final float DECAY_EXPLORE_RATE = 0.999f;
     protected final Random random = new Random(0);
     protected final Memory memory = new Memory(4096, true);
@@ -36,7 +37,7 @@ public class DQN extends Agent {
     protected final Optimizer optimizer;
 
     protected NDManager manager;
-    protected Model policy_net;
+    public Model policy_net;
     protected Model target_net;
     protected Predictor<NDList, NDList> policy_predictor;
     protected Predictor<NDList, NDList> target_predictor;
@@ -62,7 +63,7 @@ public class DQN extends Agent {
             if (!isEval()) {
                 memory.setState(state);
 
-                if (memory.size() > 0) {
+                if (memory.size() > batch_size) {
                     updateModel(submanager);
                 }
             }
@@ -98,6 +99,7 @@ public class DQN extends Agent {
         target_net = ScoreModel.newModel(manager, dim_of_state_space, hidden_size, num_of_action);
         policy_predictor = policy_net.newPredictor(new NoopTranslator());
         target_predictor = target_net.newPredictor(new NoopTranslator());
+
         syncNets();
     }
 
@@ -105,20 +107,22 @@ public class DQN extends Agent {
         for (Pair<String, Parameter> params : policy_net.getBlock().getParameters()) {
             target_net.getBlock().getParameters().get(params.getKey())
                     .setArray(params.getValue().getArray().duplicate());
+
         }
+        target_predictor = target_net.newPredictor(new NoopTranslator());
     }
 
     private void updateModel(NDManager submanager) throws TranslateException {
-        NDList batch = memory.sampleBatch(batch_size, submanager);
-        NDArray policy = policy_predictor.predict(new NDList(batch.get(0))).singletonOrThrow();
-        NDArray target = target_predictor.predict(new NDList(batch.get(1))).singletonOrThrow();
-
-        NDArray loss = loss_func.evaluate(new NDList(gather(policy, batch.get(2).toIntArray())), new NDList(
-                batch.get(3).add(target.max(new int[] { 1 }).mul(batch.get(4).logicalNot()).mul(gamma)).duplicate()));
+        Batch batch = memory.sampleBatch(batch_size, submanager);
+        NDArray policy = policy_predictor.predict(new NDList(batch.getStates())).singletonOrThrow();
+        NDArray target = target_predictor.predict(new NDList(batch.getNextStates())).singletonOrThrow();
+        NDArray expected_returns = gather(policy, batch.getActions().toIntArray());
+        NDArray next_returns = batch.getRewards()
+                .add(target.max(new int[] { 1 }).mul(batch.getMasks().logicalNot()).mul(gamma)).duplicate();
+        NDArray loss = loss_func.evaluate(new NDList(expected_returns), new NDList(next_returns)).mul(2);
 
         try (GradientCollector collector = Engine.getInstance().newGradientCollector()) {
             collector.backward(loss);
-
             for (Pair<String, Parameter> params : policy_net.getBlock().getParameters()) {
                 NDArray params_arr = params.getValue().getArray();
                 optimizer.update(params.getKey(), params_arr, params_arr.getGradient().duplicate());
@@ -126,7 +130,7 @@ public class DQN extends Agent {
 
         }
 
-        if (++iteration % sync_net_interval == 0) {
+        if (iteration++ % sync_net_interval == 0) {
             epsilon *= DECAY_EXPLORE_RATE;
             syncNets();
         }

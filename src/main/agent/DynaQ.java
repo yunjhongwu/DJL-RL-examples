@@ -5,7 +5,7 @@ import java.util.Random;
 import java.util.stream.IntStream;
 
 import main.utils.Memory;
-import main.utils.Transition;
+import main.utils.datatype.Transition;
 
 public class DynaQ extends Agent {
     private final Random random = new Random(0);

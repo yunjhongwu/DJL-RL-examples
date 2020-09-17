@@ -2,7 +2,7 @@ package main.env;
 
 import java.util.Random;
 
-import main.utils.Snapshot;
+import main.utils.datatype.Snapshot;
 
 public abstract class Environment {
     protected final Random random = new Random(0);

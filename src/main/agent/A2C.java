@@ -18,7 +18,7 @@ import ai.djl.util.Pair;
 import main.agent.model.DistributionValueModel;
 import main.utils.ActionSampler;
 import main.utils.Memory;
-import main.utils.Transition;
+import main.utils.datatype.Transition;
 
 public class A2C extends Agent {
 
