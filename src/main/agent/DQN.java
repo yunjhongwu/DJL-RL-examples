@@ -18,6 +18,7 @@ import ai.djl.translate.TranslateException;
 import ai.djl.util.Pair;
 import main.agent.model.ScoreModel;
 import main.utils.ActionSampler;
+import main.utils.Helper;
 import main.utils.Memory;
 import main.utils.datatype.Batch;
 
@@ -29,7 +30,7 @@ public class DQN extends Agent {
     protected final L2Loss loss_func = new L2Loss();
 
     private final int dim_of_state_space;
-    private final int num_of_action;
+    private final int num_of_actions;
     private final int hidden_size;
     protected final int batch_size;
     protected final int sync_net_interval;
@@ -37,7 +38,7 @@ public class DQN extends Agent {
     protected final Optimizer optimizer;
 
     protected NDManager manager;
-    public Model policy_net;
+    protected Model policy_net;
     protected Model target_net;
     protected Predictor<NDList, NDList> policy_predictor;
     protected Predictor<NDList, NDList> target_predictor;
@@ -47,7 +48,7 @@ public class DQN extends Agent {
     public DQN(int dim_of_state_space, int num_of_actions, int hidden_size, int batch_size, int sync_net_interval,
             float gamma, float learning_rate) {
         this.dim_of_state_space = dim_of_state_space;
-        this.num_of_action = num_of_actions;
+        this.num_of_actions = num_of_actions;
         this.hidden_size = hidden_size;
         this.batch_size = batch_size;
         this.sync_net_interval = sync_net_interval;
@@ -95,8 +96,8 @@ public class DQN extends Agent {
             manager.close();
         }
         manager = NDManager.newBaseManager();
-        policy_net = ScoreModel.newModel(manager, dim_of_state_space, hidden_size, num_of_action);
-        target_net = ScoreModel.newModel(manager, dim_of_state_space, hidden_size, num_of_action);
+        policy_net = ScoreModel.newModel(manager, dim_of_state_space, hidden_size, num_of_actions);
+        target_net = ScoreModel.newModel(manager, dim_of_state_space, hidden_size, num_of_actions);
         policy_predictor = policy_net.newPredictor(new NoopTranslator());
         target_predictor = target_net.newPredictor(new NoopTranslator());
 
@@ -116,7 +117,7 @@ public class DQN extends Agent {
         Batch batch = memory.sampleBatch(batch_size, submanager);
         NDArray policy = policy_predictor.predict(new NDList(batch.getStates())).singletonOrThrow();
         NDArray target = target_predictor.predict(new NDList(batch.getNextStates())).singletonOrThrow();
-        NDArray expected_returns = gather(policy, batch.getActions().toIntArray());
+        NDArray expected_returns = Helper.gather(policy, batch.getActions().toIntArray());
         NDArray next_returns = batch.getRewards()
                 .add(target.max(new int[] { 1 }).mul(batch.getMasks().logicalNot()).mul(gamma)).duplicate();
         NDArray loss = loss_func.evaluate(new NDList(expected_returns), new NDList(next_returns)).mul(2);

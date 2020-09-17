@@ -1,7 +1,5 @@
 package main.agent;
 
-import ai.djl.ndarray.NDArray;
-
 public abstract class Agent {
     private boolean is_eval = false;
 
@@ -23,12 +21,4 @@ public abstract class Agent {
         return is_eval;
     }
 
-    protected static NDArray gather(NDArray arr, int[] indexes) {
-        boolean[][] mask = new boolean[(int) arr.size(0)][(int) arr.size(1)];
-        for (int i = 0; i < indexes.length; i++) {
-            mask[i][indexes[i]] = true;
-        }
-
-        return arr.get(arr.getManager().create(mask));
-    }
 }
