@@ -5,6 +5,7 @@ Examples of reinforcement learning implementations with [DJL](https://djl.ai/) (
  - Models:
    - DQN
    - Advantage Actor Critic (A2C)
+   - Quantile Regression DQN
 
 DynaQ, which does not rely on DJL, is also provided for debug and benchmark purpose.
    
