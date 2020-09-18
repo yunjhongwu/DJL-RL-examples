@@ -5,9 +5,9 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Line2D;
 
-import main.env.EnvVisualizer;
+import main.env.BaseVisualizer;
 
-public final class CartPoleVisualizer extends EnvVisualizer {
+public final class CartPoleVisualizer extends BaseVisualizer {
     private static final long serialVersionUID = -1L;
     private static final int SCREEN_WIDTH = 600;
     private static final int SCREEN_HEIGHT = 400;

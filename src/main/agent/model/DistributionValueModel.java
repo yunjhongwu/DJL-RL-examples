@@ -15,7 +15,7 @@ import ai.djl.training.ParameterStore;
 import ai.djl.training.initializer.XavierInitializer;
 import ai.djl.util.PairList;
 
-public class DistributionValueModel extends AgentModelBlock {
+public class DistributionValueModel extends BaseModel {
     private static final float LAYERNORM_MOMENTUM = 0.9999f;
     private static final float LAYERNORM_EPSILON = 1e-5f;
     private final Block linear_input;
@@ -44,7 +44,7 @@ public class DistributionValueModel extends AgentModelBlock {
 
     public static Model newModel(NDManager manager, int input_size, int hidden_size, int output_size) {
         Model model = Model.newInstance("DistributionValueModel");
-        AgentModelBlock net = new DistributionValueModel(manager, hidden_size, output_size);
+        BaseModel net = new DistributionValueModel(manager, hidden_size, output_size);
         net.initialize(net.getManager(), DataType.FLOAT32, new Shape(input_size));
         model.setBlock(net);
 

@@ -20,7 +20,7 @@ import main.utils.ActionSampler;
 import main.utils.Memory;
 import main.utils.datatype.Transition;
 
-public class A2C extends Agent {
+public class A2C extends BaseAgent {
 
     private final Random random = new Random(0);
     private final Memory memory = new Memory(1);

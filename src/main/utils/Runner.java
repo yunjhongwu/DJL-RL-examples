@@ -1,14 +1,14 @@
 package main.utils;
 
-import main.agent.Agent;
+import main.agent.BaseAgent;
 import main.env.Environment;
 import main.utils.datatype.Snapshot;
 
 public class Runner {
-    private final Agent agent;
+    private final BaseAgent agent;
     private final Environment env;
 
-    public Runner(Agent agent, Environment env) {
+    public Runner(BaseAgent agent, Environment env) {
         this.agent = agent;
         this.env = env;
     }

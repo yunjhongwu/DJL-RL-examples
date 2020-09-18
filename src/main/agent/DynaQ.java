@@ -7,7 +7,7 @@ import java.util.stream.IntStream;
 import main.utils.Memory;
 import main.utils.datatype.Transition;
 
-public class DynaQ extends Agent {
+public class DynaQ extends BaseAgent {
     private final Random random = new Random(0);
     private final Memory memory = new Memory(1);
     private final EmpiricalModel env;

@@ -8,11 +8,11 @@ import java.awt.RenderingHints;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-public abstract class EnvVisualizer extends JPanel {
+public abstract class BaseVisualizer extends JPanel {
     private static final long serialVersionUID = -1L;
     private final int pause_per_frame;
 
-    public EnvVisualizer(String name, int screen_width, int screen_height, int fps) {
+    public BaseVisualizer(String name, int screen_width, int screen_height, int fps) {
         this.pause_per_frame = 1000 / fps;
         this.setSize(screen_width, screen_height);
 

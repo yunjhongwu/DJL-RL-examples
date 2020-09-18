@@ -1,6 +1,6 @@
 package main.agent;
 
-public abstract class Agent {
+public abstract class BaseAgent {
     private boolean is_eval = false;
 
     public abstract int react(float[] state);

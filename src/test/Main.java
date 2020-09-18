@@ -4,6 +4,7 @@ import ai.djl.engine.Engine;
 import main.agent.A2C;
 import main.agent.DQN;
 import main.agent.DynaQ;
+import main.agent.QRDQN;
 import main.env.Environment;
 import main.env.cartpole.CartPole;
 import main.utils.Runner;
@@ -13,7 +14,7 @@ public class Main {
         Engine.getInstance().setRandomSeed(0);
         Environment env = new CartPole(false);
         env.seed(0);
-        runDQN(env, 500);
+        runQRDQN(env, 500);
     }
 
     public static void runDynaQ(Environment env, int goal) {
@@ -28,4 +29,7 @@ public class Main {
         new Runner(new A2C(env.DimOfStateSpace(), env.NumOfActions(), 64, 0.95f, 0.001f), env).run(goal);
     }
 
+    public static void runQRDQN(Environment env, int goal) {
+        new Runner(new QRDQN(env.DimOfStateSpace(), env.NumOfActions(), 8, 64, 32, 32, 0.95f, 0.001f), env).run(goal);
+    }
 }
