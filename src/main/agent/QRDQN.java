@@ -39,7 +39,6 @@ public class QRDQN extends BaseDQN {
         NDArray next_actions = target.mean(new int[] { 2 }).argMax(1).toType(DataType.INT32, false);
 
         NDArray expected_returns = Helper.gather(policy, batch.getActions().toIntArray());
-
         NDArray next_returns = Helper.tile(batch.getRewards(), expected_returns.getShape())
                 .add(Helper.gather(target, next_actions.toIntArray())
                         .mul(Helper.tile(batch.getMasks().logicalNot(), expected_returns.getShape())).mul(gamma))
