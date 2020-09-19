@@ -3,7 +3,6 @@ package main.env.http;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Map;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
 import org.apache.http.Consts;
@@ -22,6 +21,13 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import main.env.Environment;
 import main.utils.datatype.Snapshot;
 
+/**
+ * The class provides a client to send actions via post requests and receive
+ * snapshots from an external http server. Expected post requests including
+ * {"env": "query"}, {"env": "reset"}, {"seed": seed}, and "{"action": action}.
+ * A valid server should response with {"state": state as a list of floats,
+ * "rewards": float rewards, "mask": boolean mask}.
+ */
 public class HttpEnvironment extends Environment {
     private final HttpClient client;
     private final String address;
@@ -31,16 +37,17 @@ public class HttpEnvironment extends Environment {
         super(state_space, dim_of_state_space, num_of_actions);
         this.client = client;
         this.address = address;
-        final Properties properties = System.getProperties();
-        properties.setProperty("jdk.internal.httpclient.disableHostnameVerification", Boolean.TRUE.toString());
-
-        properties.setProperty("jdk.httpclient.keepalive.timeout", "0");
     }
 
+    /**
+     * Create a http environment to interact with the specified address.
+     * 
+     * @param address
+     * @return http environment
+     */
     public static HttpEnvironment make(String address) {
         HttpClient client = HttpClients.createDefault();
         JsonNode data = sendRequest(Map.of("env", "query"), address, client);
-
         ArrayNode space = (ArrayNode) data.get("state_space");
         int dim = data.get("dim_of_state_space").intValue();
 
@@ -55,9 +62,16 @@ public class HttpEnvironment extends Environment {
         }
 
         return new HttpEnvironment(state_space, dim, data.get("num_of_actions").intValue(), client, address);
-
     }
 
+    /**
+     * Send prepare and send post requests to the address and handle responses.
+     * 
+     * @param data
+     * @param address
+     * @param client
+     * @return parsed json data
+     */
     private static JsonNode sendRequest(Map<String, Object> data, String address, HttpClient client) {
         try {
             HttpPost post = new HttpPost(address);
@@ -75,31 +89,52 @@ public class HttpEnvironment extends Environment {
                 throw new IOException("Unexpected response status: " + status);
             }
         } catch (IOException e) {
-
             throw new UncheckedIOException(e);
         }
     }
 
+    /**
+     * {@link HttpEnvironment} has no default visualizer.
+     */
     @Override
     public void render() {
         // No effect
     }
 
+    /**
+     * Send a request of form {"seed": seed} to reset the seed.
+     * 
+     * @param seed
+     */
     @Override
     public void seed(long seed) {
         sendRequest(Map.of("seed", seed), address, client);
     }
 
+    /**
+     * Send a request of form {"env": "reset"} to reset the environment.
+     * 
+     * @param snapshot including next state, reward, and mask.
+     */
     @Override
     public Snapshot reset() {
         return toSnapshot(sendRequest(Map.of("env", "reset"), address, client));
     }
 
+    /**
+     * Send a request of form {"action": action} to take action.
+     */
     @Override
     public Snapshot step(int action) {
         return toSnapshot(sendRequest(Map.of("action", action), address, client));
     }
 
+    /**
+     * Convert a valid response to {@link Snapshot}.
+     * 
+     * @param parsed json data
+     * @return snapshot
+     */
     private Snapshot toSnapshot(JsonNode data) {
         ArrayNode state_node = (ArrayNode) data.get("state");
         float[] state = new float[state_node.size()];
