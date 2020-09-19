@@ -23,7 +23,7 @@ public final class CartPole extends Environment {
     private final CartPoleVisualizer visualizer;
 
     public CartPole(boolean visual) {
-        super(STATE_SPACE);
+        super(STATE_SPACE, 4, 2);
         visualizer = visual ? new CartPoleVisualizer(LENGTH, X_THRESHOLD, 1000) : null;
     }
 
@@ -64,16 +64,6 @@ public final class CartPole extends Environment {
                 || state[2] > THETA_THRESHOLD);
 
         return new Snapshot(state, 1.0f, done);
-    }
-
-    @Override
-    public int DimOfStateSpace() {
-        return 4;
-    }
-
-    @Override
-    public int NumOfActions() {
-        return 2;
     }
 
 }

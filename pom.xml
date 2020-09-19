@@ -18,9 +18,10 @@
 		</plugins>
 	</build>
 	<properties>
-	    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<djl.version>0.8.0-SNAPSHOT</djl.version>
 		<pytorch.version>1.6.0</pytorch.version>
+		<jackson.version>2.11.2</jackson.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -39,6 +40,16 @@
 			<classifier>linux-x86_64</classifier>
 			<version>${pytorch.version}</version>
 			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>${jackson.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>${jackson.version}</version>
 		</dependency>
 	</dependencies>
 </project>

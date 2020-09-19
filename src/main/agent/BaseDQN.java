@@ -114,10 +114,6 @@ public abstract class BaseDQN extends BaseAgent {
         }
         target_predictor = target_net.newPredictor(new NoopTranslator());
 
-        for (Pair<String, Parameter> params : target_net.getBlock().getParameters()) {
-            System.out.println(params.getValue().getArray());
-
-        }
     }
 
     protected final void gradientUpdate(NDArray loss) {

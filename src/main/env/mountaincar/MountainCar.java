@@ -21,7 +21,7 @@ public final class MountainCar extends Environment {
     private int episode_length = 0;
 
     public MountainCar(boolean visual) {
-        super(STATE_SPACE);
+        super(STATE_SPACE, 2, 3);
         visualizer = visual ? new MountainCarVisualizer(MIN_POSITION, MAX_POSITION, GOAL_POSITION, 1000) : null;
     }
 
@@ -54,16 +54,6 @@ public final class MountainCar extends Environment {
                 || ++episode_length >= MAX_EPISODE_LENGTH);
 
         return new Snapshot(state, -1, done);
-    }
-
-    @Override
-    public int DimOfStateSpace() {
-        return 2;
-    }
-
-    @Override
-    public int NumOfActions() {
-        return 3;
     }
 
 }

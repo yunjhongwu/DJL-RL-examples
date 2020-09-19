@@ -1,6 +1,9 @@
 package main.utils.datatype;
 
-import java.util.Arrays;
+import java.util.Map;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Snapshot {
     private final float[] state;
@@ -27,14 +30,10 @@ public class Snapshot {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder("{\"state\":");
-        builder.append(Arrays.toString(state));
-        builder.append(",\"reward\":");
-        builder.append(reward);
-        builder.append(",\"mask\":");
-        builder.append(mask);
-        builder.append('}');
-
-        return builder.toString();
+        try {
+            return new ObjectMapper().writeValueAsString(Map.of("state", state, "reward", reward, "mask", mask));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -1,6 +1,9 @@
 package main.utils.datatype;
 
-import java.util.Arrays;
+import java.util.Map;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public final class Transition extends Snapshot {
 
@@ -23,15 +26,12 @@ public final class Transition extends Snapshot {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder(super.toString());
-        builder.deleteCharAt(builder.length() - 1);
-        builder.append(",\"state_next\":");
-        builder.append(Arrays.toString(state_next));
-        builder.append(",\"action\":");
-        builder.append(action);
-        builder.append('}');
-
-        return builder.toString();
+        try {
+            return new ObjectMapper().writeValueAsString(Map.of("state", getState(), "state_next", state_next, "action",
+                    action, "reward", getReward(), "mask", isMasked()));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }
