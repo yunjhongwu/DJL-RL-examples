@@ -12,7 +12,6 @@ public final class Memory {
     private final Random random;
     private final int capacity;
     private final Transition[] memory;
-    private final boolean shuffle;
 
     private float[] state_prev;
     private int action;
@@ -22,21 +21,16 @@ public final class Memory {
     private int head;
     private int size;
 
-    public Memory(int capacity, boolean shuffle) {
-        this(capacity, shuffle, 0);
+    public Memory(int capacity) {
+        this(capacity, 0);
     }
 
-    public Memory(int capacity, boolean shuffle, int seed) {
+    public Memory(int capacity, int seed) {
         this.capacity = capacity;
         this.memory = new Transition[capacity];
-        this.shuffle = shuffle;
         this.random = new Random(seed);
 
         reset();
-    }
-
-    public Memory(int capacity) {
-        this(capacity, false);
     }
 
     public void setState(float[] state) {
@@ -116,9 +110,6 @@ public final class Memory {
     private void add(Transition transition) {
         head += 1;
         if (head >= capacity) {
-            if (shuffle) {
-                shuffleMemory();
-            }
             head = 0;
         }
 
@@ -132,17 +123,17 @@ public final class Memory {
         if (i != stage) {
             String info_name;
             switch (stage) {
-                case 0:
-                    info_name = "State";
-                    break;
-                case 1:
-                    info_name = "Action";
-                    break;
-                case 2:
-                    info_name = "Reward and Mask";
-                    break;
-                default:
-                    info_name = null;
+            case 0:
+                info_name = "State";
+                break;
+            case 1:
+                info_name = "Action";
+                break;
+            case 2:
+                info_name = "Reward and Mask";
+                break;
+            default:
+                info_name = null;
             }
             throw new IllegalStateException("Expected information: " + info_name);
         } else {
@@ -150,16 +141,6 @@ public final class Memory {
             if (stage > 2) {
                 stage = 0;
             }
-        }
-    }
-
-    private void shuffleMemory() {
-        for (int i = size - 1; i > 0; i--) {
-            int j = random.nextInt(i + 1);
-            Transition transition = memory[j];
-
-            memory[j] = memory[i];
-            memory[i] = transition;
         }
     }
 

@@ -37,7 +37,7 @@ public class QRDQN extends BaseDQN {
 
     @Override
     protected int getAction(NDManager manager, float[] state) throws TranslateException {
-        NDArray score = policy_predictor.predict(new NDList(manager.create(state))).singletonOrThrow()
+        NDArray score = target_predictor.predict(new NDList(manager.create(state))).singletonOrThrow()
                 .reshape(num_of_actions, num_of_action_bins).mean(new int[] { 1 });
         return ActionSampler.epsilonGreedy(score, random, Math.max(MIN_EXPLORE_RATE, epsilon));
     }

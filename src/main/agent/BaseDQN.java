@@ -19,11 +19,11 @@ import main.agent.model.ScoreModel;
 import main.utils.Memory;
 
 public abstract class BaseDQN extends BaseAgent {
-    protected static final float MIN_EXPLORE_RATE = 0.05f;
-    protected static final float DECAY_EXPLORE_RATE = 0.999f;
+    protected static final float MIN_EXPLORE_RATE = 0.1f;
+    protected static final float DECAY_EXPLORE_RATE = 0.99f;
 
     protected final Random random = new Random(0);
-    protected final Memory memory = new Memory(4096, true);
+    protected final Memory memory = new Memory(4096);
 
     private final int dim_of_state_space;
     private final int num_of_actions;
@@ -64,7 +64,6 @@ public abstract class BaseDQN extends BaseAgent {
         try (NDManager submanager = manager.newSubManager()) {
             if (!isEval()) {
                 memory.setState(state);
-
                 if (memory.size() > batch_size) {
                     updateModel(submanager);
                 }
@@ -102,7 +101,6 @@ public abstract class BaseDQN extends BaseAgent {
         target_net = ScoreModel.newModel(manager, dim_of_state_space, hidden_size, num_of_actions);
 
         policy_predictor = policy_net.newPredictor(new NoopTranslator());
-
         syncNets();
     }
 
@@ -110,10 +108,9 @@ public abstract class BaseDQN extends BaseAgent {
         for (Pair<String, Parameter> params : policy_net.getBlock().getParameters()) {
             target_net.getBlock().getParameters().get(params.getKey())
                     .setArray(params.getValue().getArray().duplicate());
-
         }
-        target_predictor = target_net.newPredictor(new NoopTranslator());
 
+        target_predictor = target_net.newPredictor(new NoopTranslator());
     }
 
     protected final void gradientUpdate(NDArray loss) {
@@ -121,8 +118,8 @@ public abstract class BaseDQN extends BaseAgent {
             collector.backward(loss);
             for (Pair<String, Parameter> params : policy_net.getBlock().getParameters()) {
                 NDArray params_arr = params.getValue().getArray();
+                optimizer.update(params.getKey(), params_arr, params_arr.getGradient());
 
-                optimizer.update(params.getKey(), params_arr, params_arr.getGradient().duplicate());
             }
         }
 

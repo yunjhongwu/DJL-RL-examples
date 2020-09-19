@@ -4,8 +4,7 @@ import java.util.Random;
 
 import ai.djl.ndarray.NDArray;
 
-public class ActionSampler {
-
+public final class ActionSampler {
     public static int epsilonGreedy(NDArray distribution, Random random, float epsilon) {
         if (random.nextFloat() < epsilon) {
             return random.nextInt((int) distribution.size());

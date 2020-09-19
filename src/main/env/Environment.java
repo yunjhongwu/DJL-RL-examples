@@ -13,8 +13,8 @@ public abstract class Environment {
     private final int num_of_actions;
 
     public Environment(double[][] state_space, int dim_of_state_space, int num_of_actions) {
-        if (state_space == null) {
-            throw new IllegalArgumentException("Received null state space");
+        if (state_space != null && state_space.length != dim_of_state_space) {
+            throw new IllegalArgumentException("Invalid state space and dimension");
         }
         this.state_space = state_space;
         this.dim_of_state_space = dim_of_state_space;
@@ -31,6 +31,9 @@ public abstract class Environment {
     }
 
     public final double[] getStateSpace(int dim) {
+        if (state_space == null) {
+            throw new UnsupportedOperationException("State space has not been specified.");
+        }
         if (dim < 0 || dim >= state_space.length) {
             throw new IllegalArgumentException("Dimension is between 0 and " + DimOfStateSpace());
         }
@@ -38,6 +41,10 @@ public abstract class Environment {
     }
 
     public final double[][] getStateSpace() {
+        if (state_space == null) {
+            throw new UnsupportedOperationException("State space has not been specified.");
+        }
+
         double[][] space = new double[state_space.length][];
         for (int i = 0; i < state_space.length; i++) {
             space[i] = state_space[i].clone();
