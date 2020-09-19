@@ -1,11 +1,19 @@
 package main.env.http;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.io.UncheckedIOException;
 import java.util.Map;
+import java.util.Properties;
+import java.util.stream.Collectors;
+
+import org.apache.http.Consts;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,23 +24,28 @@ import main.utils.datatype.Snapshot;
 
 public class HttpEnvironment extends Environment {
     private final HttpClient client;
-    private final URI address;
+    private final String address;
 
     private HttpEnvironment(double[][] state_space, int dim_of_state_space, int num_of_actions, HttpClient client,
-            URI address) {
+            String address) {
         super(state_space, dim_of_state_space, num_of_actions);
         this.client = client;
         this.address = address;
+        final Properties properties = System.getProperties();
+        properties.setProperty("jdk.internal.httpclient.disableHostnameVerification", Boolean.TRUE.toString());
+
+        properties.setProperty("jdk.httpclient.keepalive.timeout", "0");
     }
 
     public static HttpEnvironment make(String address) {
-        HttpClient client = HttpClient.newHttpClient();
-        URI address_uri = URI.create(address);
-        JsonNode data = sendRequest(Map.of("env", "query"), address_uri, client);
+        HttpClient client = HttpClients.createDefault();
+        JsonNode data = sendRequest(Map.of("env", "query"), address, client);
 
         ArrayNode space = (ArrayNode) data.get("state_space");
         int dim = data.get("dim_of_state_space").intValue();
+
         double[][] state_space = new double[dim][2];
+
         for (int i = 0; i < dim; i++) {
             for (int j = 0; j < 2; j++) {
                 JsonNode node = space.get(i).get(j);
@@ -41,19 +54,29 @@ public class HttpEnvironment extends Environment {
             }
         }
 
-        return new HttpEnvironment(state_space, dim, data.get("num_of_actions").intValue(), client, address_uri);
+        return new HttpEnvironment(state_space, dim, data.get("num_of_actions").intValue(), client, address);
 
     }
 
-    private static JsonNode sendRequest(Map<String, Object> data, URI address, HttpClient client) {
+    private static JsonNode sendRequest(Map<String, Object> data, String address, HttpClient client) {
         try {
-            HttpRequest request = HttpRequest.newBuilder(address).version(HttpClient.Version.HTTP_1_1)
-                    .POST(HttpRequest.BodyPublishers.ofString(new ObjectMapper().writeValueAsString(data))).build();
-            String response = client.send(request, HttpResponse.BodyHandlers.ofString()).body();
+            HttpPost post = new HttpPost(address);
+            UrlEncodedFormEntity entity = new UrlEncodedFormEntity(data.entrySet().stream()
+                    .map(entry -> new BasicNameValuePair(entry.getKey(), String.valueOf(entry.getValue())))
+                    .collect(Collectors.toList()), Consts.UTF_8);
+            post.setEntity(entity);
 
-            return new ObjectMapper().readTree(response);
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
+            HttpResponse response = client.execute(post);
+            int status = response.getStatusLine().getStatusCode();
+
+            if (status >= 200 && status < 300) {
+                return new ObjectMapper().readTree(EntityUtils.toString(response.getEntity()));
+            } else {
+                throw new IOException("Unexpected response status: " + status);
+            }
+        } catch (IOException e) {
+
+            throw new UncheckedIOException(e);
         }
     }
 
