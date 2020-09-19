@@ -10,7 +10,6 @@ import ai.djl.ndarray.NDList;
 import ai.djl.ndarray.NDManager;
 import ai.djl.nn.Parameter;
 import ai.djl.training.GradientCollector;
-import ai.djl.training.loss.L2Loss;
 import ai.djl.training.optimizer.Optimizer;
 import ai.djl.training.tracker.Tracker;
 import ai.djl.translate.NoopTranslator;
@@ -25,7 +24,6 @@ public abstract class BaseDQN extends BaseAgent {
 
     protected final Random random = new Random(0);
     protected final Memory memory = new Memory(4096, true);
-    protected final L2Loss loss_func = new L2Loss();
 
     private final int dim_of_state_space;
     private final int num_of_actions;
@@ -37,10 +35,10 @@ public abstract class BaseDQN extends BaseAgent {
     protected final float gamma;
 
     private Optimizer optimizer;
-    private NDManager manager;
     private Model policy_net;
     private Model target_net;
 
+    protected NDManager manager;
     protected Predictor<NDList, NDList> policy_predictor;
     protected Predictor<NDList, NDList> target_predictor;
 
@@ -102,8 +100,8 @@ public abstract class BaseDQN extends BaseAgent {
         manager = NDManager.newBaseManager();
         policy_net = ScoreModel.newModel(manager, dim_of_state_space, hidden_size, num_of_actions);
         target_net = ScoreModel.newModel(manager, dim_of_state_space, hidden_size, num_of_actions);
+
         policy_predictor = policy_net.newPredictor(new NoopTranslator());
-        target_predictor = target_net.newPredictor(new NoopTranslator());
 
         syncNets();
     }
@@ -115,6 +113,11 @@ public abstract class BaseDQN extends BaseAgent {
 
         }
         target_predictor = target_net.newPredictor(new NoopTranslator());
+
+        for (Pair<String, Parameter> params : target_net.getBlock().getParameters()) {
+            System.out.println(params.getValue().getArray());
+
+        }
     }
 
     protected final void gradientUpdate(NDArray loss) {
@@ -122,6 +125,7 @@ public abstract class BaseDQN extends BaseAgent {
             collector.backward(loss);
             for (Pair<String, Parameter> params : policy_net.getBlock().getParameters()) {
                 NDArray params_arr = params.getValue().getArray();
+
                 optimizer.update(params.getKey(), params_arr, params_arr.getGradient().duplicate());
             }
         }

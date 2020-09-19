@@ -24,7 +24,7 @@ public class DynaQ extends BaseAgent {
     private final double epsilon;
     private final int num_of_planning_iterations;
 
-    public DynaQ(double[][] state_ranges, int state_resolution, int num_of_actions, float alpha, float gamma,
+    public DynaQ(double[][] state_ranges, int num_of_actions, int state_resolution, float alpha, float gamma,
             float epsilon, int num_of_planning_iterations) {
         int num_of_states = 1;
 

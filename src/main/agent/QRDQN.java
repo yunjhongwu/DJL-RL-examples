@@ -4,6 +4,7 @@ import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
 import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.DataType;
+import ai.djl.ndarray.types.Shape;
 import ai.djl.translate.TranslateException;
 import main.utils.ActionSampler;
 import main.utils.Helper;
@@ -12,6 +13,7 @@ import main.utils.datatype.Batch;
 public class QRDQN extends BaseDQN {
     private final int num_of_actions;
     private final int num_of_action_bins;
+    private final NDArray quantiles;
 
     public QRDQN(int dim_of_state_space, int num_of_actions, int num_of_action_bins, int hidden_size, int batch_size,
             int sync_net_interval, float gamma, float learning_rate) {
@@ -19,6 +21,18 @@ public class QRDQN extends BaseDQN {
                 gamma, learning_rate);
         this.num_of_actions = num_of_actions;
         this.num_of_action_bins = num_of_action_bins;
+
+        float[] quantiles = new float[num_of_action_bins];
+
+        float grid = 0.5f / num_of_action_bins;
+        float interval = 1.0f / num_of_action_bins;
+
+        for (int i = 0; i < num_of_action_bins; i++) {
+            quantiles[i] = grid;
+            grid += interval;
+        }
+        this.quantiles = manager.create(quantiles);
+
     }
 
     @Override
@@ -28,9 +42,12 @@ public class QRDQN extends BaseDQN {
         return ActionSampler.epsilonGreedy(score, random, Math.max(MIN_EXPLORE_RATE, epsilon));
     }
 
+    int update = 0;
+
     @Override
     protected void updateModel(NDManager manager) throws TranslateException {
         Batch batch = memory.sampleBatch(batch_size, manager);
+
         NDArray policy = policy_predictor.predict(new NDList(batch.getStates())).singletonOrThrow().reshape(-1,
                 num_of_actions, num_of_action_bins);
         NDArray target = target_predictor.predict(new NDList(batch.getNextStates())).singletonOrThrow().reshape(-1,
@@ -43,8 +60,15 @@ public class QRDQN extends BaseDQN {
                 .add(Helper.gather(target, next_actions.toIntArray())
                         .mul(Helper.tile(batch.getMasks().logicalNot(), expected_returns.getShape())).mul(gamma))
                 .duplicate();
+        Shape extended_shape = expected_returns.getShape().add(num_of_action_bins);
 
-        NDArray loss = loss_func.evaluate(new NDList(expected_returns), new NDList(next_returns));
+        NDArray residuals = Helper.tile(next_returns, extended_shape)
+                .sub(Helper.tile(expected_returns, extended_shape).swapAxes(1, 2));
+
+        NDArray sq_loss_area = residuals.abs().lt(1);
+        NDArray huber = residuals.abs().sub(0.5f).mul(sq_loss_area.logicalNot())
+                .add(residuals.pow(2).mul(0.5).mul(sq_loss_area));
+        NDArray loss = huber.mul(quantiles.sub(residuals.lt(0).toType(DataType.FLOAT32, false)).abs()).mean();
 
         gradientUpdate(loss);
 
