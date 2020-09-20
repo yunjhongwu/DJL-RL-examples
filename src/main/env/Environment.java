@@ -26,10 +26,21 @@ public abstract class Environment {
                 (int) attributes.get("num_of_actions"));
     }
 
+    /**
+     * Reset the seed.
+     * 
+     * @param seed
+     */
     public void seed(long seed) {
         random.setSeed(seed);
     }
 
+    /**
+     * Get the range of the given dimension.
+     * 
+     * @param dimension
+     * @return range, represented by a double array of length 2
+     */
     public final double[] getStateSpace(int dim) {
         if (state_space == null) {
             throw new UnsupportedOperationException("State space has not been specified.");
@@ -40,6 +51,11 @@ public abstract class Environment {
         return state_space[dim].clone();
     }
 
+    /**
+     * Get the range of all the coordinates.
+     * 
+     * @return ranges, represented by a n by 2 double array
+     */
     public final double[][] getStateSpace() {
         if (state_space == null) {
             throw new UnsupportedOperationException("State space has not been specified.");
@@ -52,18 +68,40 @@ public abstract class Environment {
         return space;
     }
 
+    /**
+     * Return the dimension of the state space.
+     * 
+     * @return dimension
+     */
     public final int DimOfStateSpace() {
         return dim_of_state_space;
     }
 
+    /**
+     * Return the number of the possible actions.
+     * 
+     * @return number of actions
+     */
     public final int NumOfActions() {
         return num_of_actions;
     }
 
     public abstract void render();
 
+    /**
+     * Reset the environment with a random state.
+     * 
+     * @return
+     */
     public abstract Snapshot reset();
 
+    /**
+     * Change the internal state according to the input action and return a
+     * snapshot.
+     * 
+     * @param action
+     * @return snapshot
+     */
     public abstract Snapshot step(int action);
 
 }

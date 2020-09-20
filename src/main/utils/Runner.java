@@ -4,7 +4,7 @@ import main.agent.BaseAgent;
 import main.env.Environment;
 import main.utils.datatype.Snapshot;
 
-public class Runner {
+public final class Runner {
     private final BaseAgent agent;
     private final Environment env;
 

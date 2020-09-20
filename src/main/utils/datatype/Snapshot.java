@@ -16,15 +16,15 @@ public class Snapshot {
         this.mask = mask;
     }
 
-    public float[] getState() {
+    public final float[] getState() {
         return state;
     }
 
-    public float getReward() {
+    public final float getReward() {
         return reward;
     }
 
-    public boolean isMasked() {
+    public final boolean isMasked() {
         return mask;
     }
 

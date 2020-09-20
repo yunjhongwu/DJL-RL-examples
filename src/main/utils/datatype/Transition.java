@@ -16,11 +16,11 @@ public final class Transition extends Snapshot {
         this.action = action;
     }
 
-    public float[] getNextState() {
+    public final float[] getNextState() {
         return state_next;
     }
 
-    public int getAction() {
+    public final int getAction() {
         return action;
     }
 
