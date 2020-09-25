@@ -3,10 +3,10 @@ package main.utils.datatype;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
 
-public final class Batch extends NDList {
+public final class MemoryBatch extends NDList {
     private static final long serialVersionUID = 1L;
 
-    public Batch(NDArray... arrays) {
+    public MemoryBatch(NDArray... arrays) {
         super(arrays);
     }
 

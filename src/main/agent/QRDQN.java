@@ -8,7 +8,7 @@ import ai.djl.ndarray.types.Shape;
 import ai.djl.translate.TranslateException;
 import main.utils.ActionSampler;
 import main.utils.Helper;
-import main.utils.datatype.Batch;
+import main.utils.datatype.MemoryBatch;
 
 public class QRDQN extends BaseDQN {
     private final int num_of_actions;
@@ -46,7 +46,7 @@ public class QRDQN extends BaseDQN {
 
     @Override
     protected void updateModel(NDManager manager) throws TranslateException {
-        Batch batch = memory.sampleBatch(batch_size, manager);
+        MemoryBatch batch = memory.sampleBatch(batch_size, manager);
 
         NDArray policy = policy_predictor.predict(new NDList(batch.getStates())).singletonOrThrow().reshape(-1,
                 num_of_actions, num_of_action_bins);

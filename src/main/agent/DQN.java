@@ -7,7 +7,7 @@ import ai.djl.training.loss.L2Loss;
 import ai.djl.translate.TranslateException;
 import main.utils.ActionSampler;
 import main.utils.Helper;
-import main.utils.datatype.Batch;
+import main.utils.datatype.MemoryBatch;
 
 public class DQN extends BaseDQN {
     private final L2Loss loss_func = new L2Loss();
@@ -25,7 +25,7 @@ public class DQN extends BaseDQN {
 
     @Override
     protected void updateModel(NDManager manager) throws TranslateException {
-        Batch batch = memory.sampleBatch(batch_size, manager);
+        MemoryBatch batch = memory.sampleBatch(batch_size, manager);
 
         NDArray policy = policy_predictor.predict(new NDList(batch.getStates())).singletonOrThrow();
         NDArray target = target_predictor.predict(new NDList(batch.getNextStates())).singletonOrThrow().duplicate();
