@@ -5,6 +5,7 @@ import ai.djl.translate.TranslateException;
 import main.agent.A2C;
 import main.agent.DQN;
 import main.agent.DynaQ;
+import main.agent.GAE;
 import main.agent.QRDQN;
 import main.env.Environment;
 import main.env.cartpole.CartPole;
@@ -15,7 +16,7 @@ public class Main {
         Engine.getInstance().setRandomSeed(0);
         Environment env = new CartPole(false);
         env.seed(0);
-        runDQN(env, 500);
+        runGAE(env, 500);
     }
 
     public static void runDynaQ(Environment env, int goal) {
@@ -32,5 +33,9 @@ public class Main {
 
     public static void runQRDQN(Environment env, int goal) {
         new Runner(new QRDQN(env.DimOfStateSpace(), env.NumOfActions(), 8, 64, 32, 128, 0.99f, 0.001f), env).run(goal);
+    }
+
+    public static void runGAE(Environment env, int goal) {
+        new Runner(new GAE(env.DimOfStateSpace(), env.NumOfActions(), 64, 0.99f, 0.95f, 0.001f), env).run(goal);
     }
 }

@@ -32,7 +32,7 @@ public final class Runner {
 
             }
             score = score > Double.NEGATIVE_INFINITY ? score * 0.95 + episode_score * 0.05 : episode_score;
-            System.out.printf("Epoch %d (%d): %.2f\n", episode, episode_score, score);
+            System.out.printf("Episode %d (%d): %.2f\n", episode, episode_score, score);
 
         }
 

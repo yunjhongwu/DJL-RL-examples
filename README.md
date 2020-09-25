@@ -8,6 +8,7 @@ For debug and benchmark purpose, the repository also includes a DynaQ agent, whi
    - DQN
    - Advantage Actor Critic (A2C)
    - Quantile Regression DQN
+   - Generalized Advantage Estimation (GAE)
 
  - Gym environments:
    - CartPole
