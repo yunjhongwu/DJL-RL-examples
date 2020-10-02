@@ -6,8 +6,6 @@ import ai.djl.ndarray.NDList;
 import ai.djl.ndarray.NDManager;
 import ai.djl.nn.Parameter;
 import ai.djl.training.GradientCollector;
-import ai.djl.training.optimizer.Optimizer;
-import ai.djl.training.tracker.Tracker;
 import ai.djl.translate.TranslateException;
 import ai.djl.util.Pair;
 import main.agent.base.BaseGAE;
@@ -15,33 +13,27 @@ import main.utils.Helper;
 import main.utils.datatype.MemoryBatch;
 
 public class GAE extends BaseGAE {
-
-    private final Optimizer optimizer;
-
     public GAE(int dim_of_state_space, int num_of_action, int hidden_size, float gamma, float gae_lambda,
             float learning_rate) {
-        super(dim_of_state_space, num_of_action, hidden_size, gamma, gae_lambda);
-
-        this.optimizer = Optimizer.adam().optLearningRateTracker(Tracker.fixed(learning_rate)).build();
+        super(dim_of_state_space, num_of_action, hidden_size, gamma, gae_lambda, learning_rate);
 
         reset();
     }
 
     protected void updateModel(NDManager submanager) throws TranslateException {
-        MemoryBatch transition = memory.getOrderedBatch(submanager);
-        NDList net_output = predictor.predict(new NDList(transition.getStates()));
+        MemoryBatch batch = memory.getOrderedBatch(submanager);
+        NDList net_output = predictor.predict(new NDList(batch.getStates()));
 
         NDArray distribution = net_output.get(0);
         NDArray values = net_output.get(1);
-        NDArray rewards = transition.getRewards();
-        NDList estimates = estimateAdvantage(values, rewards);
+        NDList estimates = estimateAdvantage(values, batch.getRewards());
         NDArray expected_returns = estimates.get(0);
         NDArray advantages = estimates.get(1);
 
         NDArray log_distribution = distribution.log();
         NDArray loss_critic = (expected_returns.sub(values)).square().sum();
-        NDArray loss_actor = Helper.gather(log_distribution, transition.getActions().toIntArray()).mul(advantages).neg()
-                .sum();
+        NDArray loss_actor = Helper.gather(log_distribution, batch.getActions().toIntArray()).matMul(advantages).sum()
+                .neg();
         NDArray loss = loss_actor.add(loss_critic);
 
         try (GradientCollector collector = Engine.getInstance().newGradientCollector()) {

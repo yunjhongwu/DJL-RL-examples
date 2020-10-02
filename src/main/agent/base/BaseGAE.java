@@ -8,6 +8,8 @@ import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
 import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.index.NDIndex;
+import ai.djl.training.optimizer.Optimizer;
+import ai.djl.training.tracker.Tracker;
 import ai.djl.translate.NoopTranslator;
 import ai.djl.translate.TranslateException;
 import main.agent.model.DistributionValueModel;
@@ -17,6 +19,7 @@ import main.utils.Memory;
 public abstract class BaseGAE extends BaseAgent {
     protected final Random random = new Random(0);
     protected final Memory memory = new Memory(1024);
+    protected final Optimizer optimizer;
 
     protected NDManager manager = NDManager.newBaseManager();
     protected Model model;
@@ -28,12 +31,15 @@ public abstract class BaseGAE extends BaseAgent {
     private final int dim_of_state_space;
     private final int hidden_size;
 
-    public BaseGAE(int dim_of_state_space, int num_of_action, int hidden_size, float gamma, float gae_lambda) {
+    public BaseGAE(int dim_of_state_space, int num_of_action, int hidden_size, float gamma, float gae_lambda,
+            float learning_rate) {
         this.gae_lambda = gae_lambda;
         this.gamma = gamma;
         this.dim_of_state_space = dim_of_state_space;
         this.num_of_action = num_of_action;
         this.hidden_size = hidden_size;
+        this.optimizer = Optimizer.adam().optLearningRateTracker(Tracker.fixed(learning_rate)).build();
+        reset();
     }
 
     @Override
@@ -65,8 +71,7 @@ public abstract class BaseGAE extends BaseAgent {
                 try (NDManager submanager = manager.newSubManager()) {
                     updateModel(submanager);
                 } catch (TranslateException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    throw new IllegalStateException(e);
                 }
                 memory.reset();
             }
@@ -94,7 +99,7 @@ public abstract class BaseGAE extends BaseAgent {
                     advantages.get(i).add(values.get(i + 1).add(advantages.get(i + 1).mul(gae_lambda)).mul(gamma)));
         }
 
-        return new NDList();
+        return new NDList(expected_returns, advantages);
     }
 
     protected abstract void updateModel(NDManager submanager) throws TranslateException;
