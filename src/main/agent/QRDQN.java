@@ -6,6 +6,7 @@ import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.DataType;
 import ai.djl.ndarray.types.Shape;
 import ai.djl.translate.TranslateException;
+import main.agent.base.BaseDQN;
 import main.utils.ActionSampler;
 import main.utils.Helper;
 import main.utils.datatype.MemoryBatch;

@@ -95,10 +95,6 @@ public final class Memory {
         stage = 0;
         head = -1;
         size = 0;
-
-        for (int i = 0; i < memory.length; i++) {
-            memory[i] = null;
-        }
     }
 
     @Override

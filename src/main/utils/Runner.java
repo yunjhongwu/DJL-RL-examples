@@ -1,6 +1,6 @@
 package main.utils;
 
-import main.agent.BaseAgent;
+import main.agent.base.BaseAgent;
 import main.env.Environment;
 import main.utils.datatype.Snapshot;
 

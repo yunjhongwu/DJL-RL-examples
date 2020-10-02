@@ -5,6 +5,7 @@ import ai.djl.ndarray.NDList;
 import ai.djl.ndarray.NDManager;
 import ai.djl.training.loss.L2Loss;
 import ai.djl.translate.TranslateException;
+import main.agent.base.BaseDQN;
 import main.utils.ActionSampler;
 import main.utils.Helper;
 import main.utils.datatype.MemoryBatch;

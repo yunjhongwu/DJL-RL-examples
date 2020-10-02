@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import main.agent.base.BaseAgent;
 import main.utils.Memory;
 import main.utils.datatype.Transition;
 

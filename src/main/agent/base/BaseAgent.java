@@ -1,4 +1,4 @@
-package main.agent;
+package main.agent.base;
 
 public abstract class BaseAgent {
     private boolean is_eval = false;

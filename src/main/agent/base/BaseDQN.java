@@ -1,4 +1,4 @@
-package main.agent;
+package main.agent.base;
 
 import java.util.Random;
 
