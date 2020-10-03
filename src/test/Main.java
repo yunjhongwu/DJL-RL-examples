@@ -6,6 +6,7 @@ import main.agent.A2C;
 import main.agent.DQN;
 import main.agent.DynaQ;
 import main.agent.GAE;
+import main.agent.PPO;
 import main.agent.QRDQN;
 import main.env.Environment;
 import main.env.cartpole.CartPole;
@@ -16,7 +17,7 @@ public class Main {
         Engine.getInstance().setRandomSeed(0);
         Environment env = new CartPole(false);
         env.seed(0);
-        runGAE(env, 500);
+        runPPO(env, 500);
     }
 
     public static void runDynaQ(Environment env, int goal) {
@@ -37,5 +38,10 @@ public class Main {
 
     public static void runGAE(Environment env, int goal) {
         new Runner(new GAE(env.DimOfStateSpace(), env.NumOfActions(), 64, 0.99f, 0.95f, 0.001f), env).run(goal);
+    }
+
+    public static void runPPO(Environment env, int goal) {
+        new Runner(new PPO(env.DimOfStateSpace(), env.NumOfActions(), 64, 0.99f, 0.95f, 0.001f, 16, 8, 0.2f), env)
+                .run(goal);
     }
 }

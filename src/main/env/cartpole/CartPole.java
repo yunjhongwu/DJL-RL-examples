@@ -22,6 +22,8 @@ public final class CartPole extends Environment {
     private final float[] state = new float[] { 0.0f, 0.0f, 0.0f, 0.0f };
     private final CartPoleVisualizer visualizer;
 
+    public int count = 0;
+
     public CartPole(boolean visual) {
         super(STATE_SPACE, 4, 2);
         visualizer = visual ? new CartPoleVisualizer(LENGTH, X_THRESHOLD, 1000) : null;
@@ -30,7 +32,6 @@ public final class CartPole extends Environment {
     public void render() {
         if (visualizer != null) {
             visualizer.update(state);
-
         }
     }
 
@@ -38,10 +39,12 @@ public final class CartPole extends Environment {
         for (int i = 0; i < 4; i++) {
             state[i] = random.nextFloat() * 0.1f - 0.05f;
         }
+        count = 0;
         return new Snapshot(state, 1.0f, false);
     }
 
     public Snapshot step(int action) {
+
         double force = action == 1 ? FORCE_MAG : -FORCE_MAG;
         double cos_theta = Math.cos(state[2]);
         double sin_theta = Math.sin(state[2]);
@@ -63,7 +66,7 @@ public final class CartPole extends Environment {
         boolean done = (state[0] < -X_THRESHOLD || state[0] > X_THRESHOLD || state[2] < -THETA_THRESHOLD
                 || state[2] > THETA_THRESHOLD);
 
-        return new Snapshot(state, 1.0f, done);
+        return new Snapshot(state, 1.0f, count++ > 500 || done);
     }
 
 }

@@ -90,8 +90,7 @@ public abstract class BaseGAE extends BaseAgent {
 
     protected NDList estimateAdvantage(NDArray values, NDArray rewards) {
         NDArray expected_returns = rewards.duplicate();
-        NDArray advantages = rewards.sub(values).duplicate();
-
+        NDArray advantages = rewards.sub(values.squeeze());
         for (long i = expected_returns.getShape().get(0) - 2; i >= 0; i--) {
             NDIndex index = new NDIndex(i);
             expected_returns.set(index, expected_returns.get(i).add(expected_returns.get(i + 1).mul(gamma)));

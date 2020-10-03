@@ -22,17 +22,16 @@ public class GAE extends BaseGAE {
 
     protected void updateModel(NDManager submanager) throws TranslateException {
         MemoryBatch batch = memory.getOrderedBatch(submanager);
-        NDList net_output = predictor.predict(new NDList(batch.getStates()));
 
+        NDList net_output = predictor.predict(new NDList(batch.getStates()));
         NDArray distribution = net_output.get(0);
         NDArray values = net_output.get(1);
-        NDList estimates = estimateAdvantage(values, batch.getRewards());
+        NDList estimates = estimateAdvantage(values.duplicate(), batch.getRewards());
         NDArray expected_returns = estimates.get(0);
         NDArray advantages = estimates.get(1);
 
-        NDArray log_distribution = distribution.log();
         NDArray loss_critic = (expected_returns.sub(values)).square().sum();
-        NDArray loss_actor = Helper.gather(log_distribution, batch.getActions().toIntArray()).matMul(advantages).sum()
+        NDArray loss_actor = Helper.gather(distribution.log(), batch.getActions().toIntArray()).mul(advantages).sum()
                 .neg();
         NDArray loss = loss_actor.add(loss_critic);
 

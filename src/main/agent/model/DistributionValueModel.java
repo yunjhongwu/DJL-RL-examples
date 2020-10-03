@@ -54,11 +54,11 @@ public class DistributionValueModel extends BaseModel {
     @Override
     public NDList forward(ParameterStore parameter_store, NDList inputs, boolean training,
             PairList<String, Object> params) {
+
         NDList hidden = new NDList(
                 Activation.relu(linear_input.forward(parameter_store, inputs, training).singletonOrThrow()));
-
-        NDArray distribution = normalize(linear_action.forward(parameter_store, hidden, training).singletonOrThrow())
-                .softmax(1);
+        NDArray scores = normalize(linear_action.forward(parameter_store, hidden, training).singletonOrThrow());
+        NDArray distribution = scores.softmax(scores.getShape().dimension() - 1);
 
         NDArray value = linear_value.forward(parameter_store, hidden, training).singletonOrThrow();
 

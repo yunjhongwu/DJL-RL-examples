@@ -7,8 +7,10 @@ For debug and benchmark purpose, the repository also includes a DynaQ agent, whi
  - Models:
    - DQN
    - Advantage Actor Critic (A2C)
-   - Quantile Regression DQN
+   - Quantile Regression DQN (QRDQN)
    - Generalized Advantage Estimation (GAE)
+   - Proximal Policy Optimization (PPO)
+   
 
  - Gym environments:
    - CartPole

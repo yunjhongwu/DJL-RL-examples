@@ -1,6 +1,7 @@
 package main.agent.model;
 
 import ai.djl.Model;
+import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDList;
 import ai.djl.ndarray.NDManager;
 import ai.djl.ndarray.types.DataType;
@@ -25,8 +26,9 @@ public class DistributionModel extends ScoreModel {
     @Override
     public NDList forward(ParameterStore parameter_store, NDList inputs, boolean training,
             PairList<String, Object> params) {
+        NDArray scores = super.forward(parameter_store, inputs, training, params).singletonOrThrow();
 
-        return new NDList(super.forward(parameter_store, inputs, training, params).singletonOrThrow().softmax(1));
+        return new NDList(scores.softmax(scores.getShape().dimension() - 1));
     }
 
 }

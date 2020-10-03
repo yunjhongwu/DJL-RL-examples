@@ -42,7 +42,6 @@ public class ScoreModel extends BaseModel {
             PairList<String, Object> params) {
         NDList hidden = new NDList(
                 Activation.relu(linear_input.forward(parameter_store, inputs, training).singletonOrThrow()));
-
         return linear_output.forward(parameter_store, hidden, training);
     }
 
